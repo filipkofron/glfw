@@ -38,7 +38,7 @@
  #define GLFW_WGL_LIBRARY_CONTEXT_STATE
 #endif
 
-#if defined(_GLFW_COCOA) && NEW_APPLE
+#if defined(_GLFW_COCOA)
  #include "cocoa_platform.h"
 #else
  #define GLFW_COCOA_WINDOW_STATE

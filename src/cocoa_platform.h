@@ -29,8 +29,6 @@
 #include <Carbon/Carbon.h>
 #include <IOKit/hid/IOHIDLib.h>
 
-#ifdef NEW_APPLE
-
 // NOTE: All of NSGL was deprecated in the 10.14 SDK
 //       This disables the pointless warnings for every symbol we use
 #ifndef GL_SILENCE_DEPRECATION
@@ -42,6 +40,8 @@
 #else
 typedef void* id;
 #endif
+
+#if NEW_APPLE
 
 // NOTE: Many Cocoa enum values have been renamed and we need to build across
 //       SDK versions where one is unavailable or deprecated.
@@ -211,6 +211,7 @@ typedef struct _GLFWcursorNS
     id              object;
 } _GLFWcursorNS;
 
+#endif // New_APPLE
 
 GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform);
 int _glfwInitCocoa(void);
@@ -302,4 +303,16 @@ GLFWbool _glfwCreateContextNSGL(_GLFWwindow* window,
                                 const _GLFWfbconfig* fbconfig);
 void _glfwDestroyContextNSGL(_GLFWwindow* window);
 
-#endif // NEW_APPLE
+#if !NEW_APPLE
+#define GLFW_COCOA_WINDOW_STATE
+#define GLFW_COCOA_LIBRARY_WINDOW_STATE
+#define GLFW_COCOA_MONITOR_STATE
+#define GLFW_COCOA_CURSOR_STATE
+
+#define GLFW_NSGL_CONTEXT_STATE
+#define GLFW_NSGL_LIBRARY_CONTEXT_STATE
+
+#include <stdio.h>
+#define KFX_DBG(...) printf("%s@%s:%i: ", __FUNCTION__, strrchr(__FILE__, '/') + 1, __LINE__); printf (__VA_ARGS__)
+
+#endif
