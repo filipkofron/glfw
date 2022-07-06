@@ -153,7 +153,7 @@
 #if defined(_WIN32)
  #include "win32_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_WIN32_LIBRARY_TIMER_STATE
-#elif defined(__APPLE__)  && NEW_APPLE
+#elif defined(__APPLE__)
  #include "cocoa_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_COCOA_LIBRARY_TIMER_STATE
 #else
