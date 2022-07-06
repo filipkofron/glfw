@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <math.h>
 
+#ifdef NEW_APPLE
+
 static void makeContextCurrentNSGL(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -374,3 +376,4 @@ GLFWAPI id glfwGetNSGLContext(GLFWwindow* handle)
     return window->context.nsgl.object;
 }
 
+#endif // NEW_APPLE

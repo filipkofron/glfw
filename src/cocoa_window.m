@@ -31,6 +31,8 @@
 #include <float.h>
 #include <string.h>
 
+#ifdef NEW_APPLE
+
 // Returns the style mask corresponding to the window settings
 //
 static NSUInteger getStyleMask(_GLFWwindow* window)
@@ -1950,3 +1952,5 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
     return window->ns.object;
 }
 
+
+#endif // NEW_APPLE

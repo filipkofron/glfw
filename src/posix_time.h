@@ -30,6 +30,10 @@
 #include <stdint.h>
 #include <time.h>
 
+#if defined(__APPLE__) && !defined(NEW_APPLE)
+typedef clock_t clockid_t;
+#endif
+
 
 // POSIX-specific global timer data
 //

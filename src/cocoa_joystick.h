@@ -28,6 +28,8 @@
 #include <IOKit/IOCFPlugIn.h>
 #include <IOKit/hid/IOHIDKeys.h>
 
+#ifdef NEW_APPLE
+
 #define GLFW_COCOA_JOYSTICK_STATE         _GLFWjoystickNS ns;
 #define GLFW_COCOA_LIBRARY_JOYSTICK_STATE
 
@@ -49,3 +51,4 @@ GLFWbool _glfwPollJoystickCocoa(_GLFWjoystick* js, int mode);
 const char* _glfwGetMappingNameCocoa(void);
 void _glfwUpdateGamepadGUIDCocoa(char* guid);
 
+#endif // NEW_APPLE

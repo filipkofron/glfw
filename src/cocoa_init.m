@@ -32,6 +32,8 @@
 // Needed for _NSGetProgname
 #include <crt_externs.h>
 
+#ifdef NEW_APPLE
+
 // Change to our application bundle's resources directory, if present
 //
 static void changeToResourcesDirectory(void)
@@ -682,3 +684,4 @@ void _glfwTerminateCocoa(void)
     } // autoreleasepool
 }
 
+#endif // NEW_APPLE

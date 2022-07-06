@@ -29,6 +29,8 @@
 #include <Carbon/Carbon.h>
 #include <IOKit/hid/IOHIDLib.h>
 
+#ifdef NEW_APPLE
+
 // NOTE: All of NSGL was deprecated in the 10.14 SDK
 //       This disables the pointless warnings for every symbol we use
 #ifndef GL_SILENCE_DEPRECATION
@@ -300,3 +302,4 @@ GLFWbool _glfwCreateContextNSGL(_GLFWwindow* window,
                                 const _GLFWfbconfig* fbconfig);
 void _glfwDestroyContextNSGL(_GLFWwindow* window);
 
+#endif // NEW_APPLE

@@ -42,7 +42,7 @@ static const struct
 #if defined(_GLFW_WIN32)
     { GLFW_PLATFORM_WIN32, _glfwConnectWin32 },
 #endif
-#if defined(_GLFW_COCOA)
+#if defined(_GLFW_COCOA) && NEW_APPLE
     { GLFW_PLATFORM_COCOA, _glfwConnectCocoa },
 #endif
 #if defined(_GLFW_X11)

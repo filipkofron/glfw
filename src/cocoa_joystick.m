@@ -28,7 +28,6 @@
 //========================================================================
 
 #include "internal.h"
-
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
@@ -38,6 +37,8 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Kernel/IOKit/hidsystem/IOHIDUsageTables.h>
+
+#ifdef NEW_APPLE
 
 
 // Joystick element information
@@ -476,3 +477,4 @@ void _glfwUpdateGamepadGUIDCocoa(char* guid)
     }
 }
 
+#endif // NEW_APPLE

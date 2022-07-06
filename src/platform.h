@@ -38,7 +38,7 @@
  #define GLFW_WGL_LIBRARY_CONTEXT_STATE
 #endif
 
-#if defined(_GLFW_COCOA)
+#if defined(_GLFW_COCOA) && NEW_APPLE
  #include "cocoa_platform.h"
 #else
  #define GLFW_COCOA_WINDOW_STATE
@@ -78,7 +78,7 @@
  #define GLFW_WIN32_LIBRARY_JOYSTICK_STATE
 #endif
 
-#if defined(_GLFW_COCOA)
+#if defined(_GLFW_COCOA) && NEW_APPLE
  #include "cocoa_joystick.h"
 #else
  #define GLFW_COCOA_JOYSTICK_STATE
@@ -153,7 +153,7 @@
 #if defined(_WIN32)
  #include "win32_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_WIN32_LIBRARY_TIMER_STATE
-#elif defined(__APPLE__)
+#elif defined(__APPLE__)  && NEW_APPLE
  #include "cocoa_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_COCOA_LIBRARY_TIMER_STATE
 #else

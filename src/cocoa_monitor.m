@@ -36,6 +36,8 @@
 #include <IOKit/graphics/IOGraphicsLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 
+#ifdef NEW_APPLE
+
 
 // Get the name of the specified display, or NULL
 //
@@ -625,3 +627,4 @@ GLFWAPI CGDirectDisplayID glfwGetCocoaMonitor(GLFWmonitor* handle)
     return monitor->ns.displayID;
 }
 
+#endif // NEW_APPLE
