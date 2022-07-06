@@ -103,7 +103,9 @@ typedef VkResult (APIENTRY *PFN_vkCreateMacOSSurfaceMVK)(VkInstance,const VkMacO
 typedef VkResult (APIENTRY *PFN_vkCreateMetalSurfaceEXT)(VkInstance,const VkMetalSurfaceCreateInfoEXT*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 
 #define GLFW_COCOA_WINDOW_STATE         _GLFWwindowNS  ns;
+#endif // NEW_APPLE
 #define GLFW_COCOA_LIBRARY_WINDOW_STATE _GLFWlibraryNS ns;
+#if NEW_APPLE
 #define GLFW_COCOA_MONITOR_STATE        _GLFWmonitorNS ns;
 #define GLFW_COCOA_CURSOR_STATE         _GLFWcursorNS  ns;
 
@@ -160,17 +162,24 @@ typedef struct _GLFWwindowNS
     double          cursorWarpDeltaX, cursorWarpDeltaY;
 } _GLFWwindowNS;
 
+#endif // NEW_APPLE
+
 // Cocoa-specific global data
 //
 typedef struct _GLFWlibraryNS
 {
+#if NEW_APPLE
     CGEventSourceRef    eventSource;
+#endif // NEW_APPLE
     id                  delegate;
+#if NEW_APPLE
     GLFWbool            cursorHidden;
     TISInputSourceRef   inputSource;
     IOHIDManagerRef     hidManager;
     id                  unicodeData;
+#endif // NEW_APPLE
     id                  helper;
+#if NEW_APPLE
     id                  keyUpMonitor;
     id                  nibObjects;
 
@@ -191,7 +200,10 @@ typedef struct _GLFWlibraryNS
         PFN_LMGetKbdType GetKbdType;
         CFStringRef     kPropertyUnicodeKeyLayoutData;
     } tis;
+#endif // NEW_APPLE
 } _GLFWlibraryNS;
+
+#if NEW_APPLE
 
 // Cocoa-specific per-monitor data
 //
@@ -305,7 +317,6 @@ void _glfwDestroyContextNSGL(_GLFWwindow* window);
 
 #if !NEW_APPLE
 #define GLFW_COCOA_WINDOW_STATE
-#define GLFW_COCOA_LIBRARY_WINDOW_STATE
 #define GLFW_COCOA_MONITOR_STATE
 #define GLFW_COCOA_CURSOR_STATE
 

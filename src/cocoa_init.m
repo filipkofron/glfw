@@ -32,7 +32,7 @@
 // Needed for _NSGetProgname
 #include <crt_externs.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 // Change to our application bundle's resources directory, if present
 //
@@ -304,10 +304,12 @@ static void createKeyTables(void)
     }
 }
 
+#endif // NEW_APPLE
 // Retrieve Unicode data for the current keyboard layout
 //
 static GLFWbool updateUnicodeData(void)
 {
+#if NEW_APPLE
     if (_glfw.ns.inputSource)
     {
         CFRelease(_glfw.ns.inputSource);
@@ -332,9 +334,14 @@ static GLFWbool updateUnicodeData(void)
                         "Cocoa: Failed to retrieve keyboard layout Unicode data");
         return GLFW_FALSE;
     }
+#else
+    KFX_DBG("Dummy stub, not implemented");
+#endif
 
     return GLFW_TRUE;
 }
+
+#if NEW_APPLE
 
 // Load HIToolbox.framework and the TIS symbols we need from it
 //
@@ -379,6 +386,8 @@ static GLFWbool initializeTIS(void)
     return updateUnicodeData();
 }
 
+#endif // NEW_APPLE
+
 @interface GLFWHelper : NSObject
 @end
 
@@ -394,6 +403,8 @@ static GLFWbool initializeTIS(void)
 }
 
 @end // GLFWHelper
+
+#if NEW_APPLE
 
 @interface GLFWApplicationDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -451,7 +462,6 @@ static GLFWbool initializeTIS(void)
 
 @end // GLFWApplicationDelegate
 
-
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
@@ -477,10 +487,22 @@ void* _glfwLoadLocalVulkanLoaderCocoa(void)
     return handle;
 }
 
-#endif
+#endif // NEW_APPLE
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
+
+#if NEW_APPLE
+#define NOT_IMPLEMENTED_OLD_APPLE(function) function
+#else
+static void NotImplemented()
+{
+    KFX_DBG("Not implemented");
+    abort();
+}
+
+#define NOT_IMPLEMENTED_OLD_APPLE(function) NotImplemented
+#endif // NEW_APPLE
 
 GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
 {
@@ -488,76 +510,76 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
     {
         GLFW_PLATFORM_COCOA,
         _glfwInitCocoa,
-        NULL, // _glfwTerminateCocoa,
-        NULL, // _glfwGetCursorPosCocoa,
-        NULL, // _glfwSetCursorPosCocoa,
-        NULL, // _glfwSetCursorModeCocoa,
-        NULL, // _glfwSetRawMouseMotionCocoa,
-        NULL, // _glfwRawMouseMotionSupportedCocoa,
-        NULL, // _glfwCreateCursorCocoa,
-        NULL, // _glfwCreateStandardCursorCocoa,
-        NULL, // _glfwDestroyCursorCocoa,
-        NULL, // _glfwSetCursorCocoa,
-        NULL, // _glfwGetScancodeNameCocoa,
-        NULL, // _glfwGetKeyScancodeCocoa,
-        NULL, // _glfwSetClipboardStringCocoa,
-        NULL, // _glfwGetClipboardStringCocoa,
-        NULL, // _glfwInitJoysticksCocoa,
-        NULL, // _glfwTerminateJoysticksCocoa,
-        NULL, // _glfwPollJoystickCocoa,
-        NULL, // _glfwGetMappingNameCocoa,
-        NULL, // _glfwUpdateGamepadGUIDCocoa,
-        NULL, // _glfwFreeMonitorCocoa,
-        NULL, // _glfwGetMonitorPosCocoa,
-        NULL, // _glfwGetMonitorContentScaleCocoa,
-        NULL, // _glfwGetMonitorWorkareaCocoa,
-        NULL, // _glfwGetVideoModesCocoa,
-        NULL, // _glfwGetVideoModeCocoa,
-        NULL, // _glfwGetGammaRampCocoa,
-        NULL, // _glfwSetGammaRampCocoa,
-        NULL, // _glfwCreateWindowCocoa,
-        NULL, // _glfwDestroyWindowCocoa,
-        NULL, // _glfwSetWindowTitleCocoa,
-        NULL, // _glfwSetWindowIconCocoa,
-        NULL, // _glfwGetWindowPosCocoa,
-        NULL, // _glfwSetWindowPosCocoa,
-        NULL, // _glfwGetWindowSizeCocoa,
-        NULL, // _glfwSetWindowSizeCocoa,
-        NULL, // _glfwSetWindowSizeLimitsCocoa,
-        NULL, // _glfwSetWindowAspectRatioCocoa,
-        NULL, // _glfwGetFramebufferSizeCocoa,
-        NULL, // _glfwGetWindowFrameSizeCocoa,
-        NULL, // _glfwGetWindowContentScaleCocoa,
-        NULL, // _glfwIconifyWindowCocoa,
-        NULL, // _glfwRestoreWindowCocoa,
-        NULL, // _glfwMaximizeWindowCocoa,
-        NULL, // _glfwShowWindowCocoa,
-        NULL, // _glfwHideWindowCocoa,
-        NULL, // _glfwRequestWindowAttentionCocoa,
-        NULL, // _glfwFocusWindowCocoa,
-        NULL, // _glfwSetWindowMonitorCocoa,
-        NULL, // _glfwWindowFocusedCocoa,
-        NULL, // _glfwWindowIconifiedCocoa,
-        NULL, // _glfwWindowVisibleCocoa,
-        NULL, // _glfwWindowMaximizedCocoa,
-        NULL, // _glfwWindowHoveredCocoa,
-        NULL, // _glfwFramebufferTransparentCocoa,
-        NULL, // _glfwGetWindowOpacityCocoa,
-        NULL, // _glfwSetWindowResizableCocoa,
-        NULL, // _glfwSetWindowDecoratedCocoa,
-        NULL, // _glfwSetWindowFloatingCocoa,
-        NULL, // _glfwSetWindowOpacityCocoa,
-        NULL, // _glfwSetWindowMousePassthroughCocoa,
-        NULL, // _glfwPollEventsCocoa,
-        NULL, // _glfwWaitEventsCocoa,
-        NULL, // _glfwWaitEventsTimeoutCocoa,
-        NULL, // _glfwPostEmptyEventCocoa,
-        NULL, // _glfwGetEGLPlatformCocoa,
-        NULL, // _glfwGetEGLNativeDisplayCocoa,
-        NULL, // _glfwGetEGLNativeWindowCocoa,
-        NULL, // _glfwGetRequiredInstanceExtensionsCocoa,
-        NULL, // _glfwGetPhysicalDevicePresentationSupportCocoa,
-        NULL, // _glfwCreateWindowSurfaceCocoa,
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwTerminateCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetCursorPosCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorPosCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorModeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetRawMouseMotionCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwRawMouseMotionSupportedCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateCursorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateStandardCursorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwDestroyCursorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetScancodeNameCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetKeyScancodeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetClipboardStringCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetClipboardStringCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwInitJoysticksCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwTerminateJoysticksCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwPollJoystickCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetMappingNameCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwUpdateGamepadGUIDCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwFreeMonitorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetMonitorPosCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetMonitorContentScaleCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetMonitorWorkareaCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetVideoModesCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetVideoModeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetGammaRampCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetGammaRampCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwDestroyWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowTitleCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowIconCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowPosCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowPosCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowSizeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowSizeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowSizeLimitsCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowAspectRatioCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetFramebufferSizeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowFrameSizeCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowContentScaleCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwIconifyWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwRestoreWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwMaximizeWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwShowWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwHideWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwRequestWindowAttentionCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwFocusWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowMonitorCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWindowFocusedCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWindowIconifiedCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWindowVisibleCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWindowMaximizedCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWindowHoveredCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwFramebufferTransparentCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowOpacityCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowResizableCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowDecoratedCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowFloatingCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowOpacityCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowMousePassthroughCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwPollEventsCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWaitEventsCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwWaitEventsTimeoutCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwPostEmptyEventCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLPlatformCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLNativeDisplayCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLNativeWindowCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetRequiredInstanceExtensionsCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetPhysicalDevicePresentationSupportCocoa),
+        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateWindowSurfaceCocoa),
     };
 
     *platform = cocoa;
@@ -572,9 +594,8 @@ int _glfwInitCocoa(void)
     KFX_DBG("init");
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-#endif
+#endif // NEW_APPLE
 
-#if NEW_APPLE
     _glfw.ns.helper = [[GLFWHelper alloc] init];
 
     [NSThread detachNewThreadSelector:@selector(doNothing:)
@@ -583,6 +604,7 @@ int _glfwInitCocoa(void)
 
     [NSApplication sharedApplication];
 
+#if NEW_APPLE
     _glfw.ns.delegate = [[GLFWApplicationDelegate alloc] init];
     if (_glfw.ns.delegate == nil)
     {
@@ -592,7 +614,11 @@ int _glfwInitCocoa(void)
     }
 
     [NSApp setDelegate:_glfw.ns.delegate];
+#else // NEW_APPLE
+    KFX_DBG("NSApplicationDelegate not implemented");
+#endif // NEW_APPLE
 
+#if NEW_APPLE
     NSEvent* (^block)(NSEvent*) = ^ NSEvent* (NSEvent* event)
     {
         if ([event modifierFlags] & NSEventModifierFlagCommand)
@@ -605,6 +631,11 @@ int _glfwInitCocoa(void)
         [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                               handler:block];
 
+#else // NEW_APPLE
+    KFX_DBG("keyUpMonitor not implemented");
+#endif // NEW_APPLE
+
+#if NEW_APPLE
     if (_glfw.hints.init.ns.chdir)
         changeToResourcesDirectory();
 
