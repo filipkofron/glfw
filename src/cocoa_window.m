@@ -1016,7 +1016,6 @@ void _glfwDestroyWindowCocoa(_GLFWwindow* window)
 #endif // NEW_APPLE
 
 #if NEW_APPLE
-
 void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
 {
     @autoreleasepool {
@@ -1027,6 +1026,12 @@ void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
     [window->ns.object setMiniwindowTitle:string];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 void _glfwSetWindowIconCocoa(_GLFWwindow* window,
                              int count, const GLFWimage* images)
@@ -1035,6 +1040,7 @@ void _glfwSetWindowIconCocoa(_GLFWwindow* window,
                     "Cocoa: Regular windows do not have icons on macOS");
 }
 
+#if NEW_APPLE
 void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 {
     @autoreleasepool {
@@ -1049,7 +1055,14 @@ void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
 {
     @autoreleasepool {
@@ -1061,7 +1074,14 @@ void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
     @autoreleasepool {
@@ -1075,7 +1095,14 @@ void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
 {
     @autoreleasepool {
@@ -1097,7 +1124,14 @@ void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
                                    int minwidth, int minheight,
                                    int maxwidth, int maxheight)
@@ -1116,7 +1150,16 @@ void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
+                                   int minwidth, int minheight,
+                                   int maxwidth, int maxheight)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
 {
     @autoreleasepool {
@@ -1126,7 +1169,14 @@ void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
         [window->ns.object setContentAspectRatio:NSMakeSize(numer, denom)];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
     @autoreleasepool {
@@ -1141,7 +1191,14 @@ void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
                                   int* left, int* top,
                                   int* right, int* bottom)
@@ -1164,7 +1221,16 @@ void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
+                                  int* left, int* top,
+                                  int* right, int* bottom)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
                                      float* xscale, float* yscale)
 {
@@ -1180,14 +1246,29 @@ void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
+                                     float* xscale, float* yscale)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwIconifyWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object miniaturize:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwIconifyWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwRestoreWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1197,7 +1278,14 @@ void _glfwRestoreWindowCocoa(_GLFWwindow* window)
         [window->ns.object zoom:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwRestoreWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1205,28 +1293,56 @@ void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
         [window->ns.object zoom:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwShowWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object orderFront:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwShowWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwHideWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object orderOut:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwHideWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwRequestWindowAttentionCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [NSApp requestUserAttention:NSInformationalRequest];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwRequestWindowAttentionCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwFocusWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1238,7 +1354,14 @@ void _glfwFocusWindowCocoa(_GLFWwindow* window)
     [window->ns.object makeKeyAndOrderFront:nil];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwFocusWindowCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
                                 _GLFWmonitor* monitor,
                                 int xpos, int ypos,
@@ -1331,35 +1454,78 @@ void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
+                                _GLFWmonitor* monitor,
+                                int xpos, int ypos,
+                                int width, int height,
+                                int refreshRate)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isKeyWindow];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");\
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwWindowIconifiedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isMiniaturized];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwWindowIconifiedCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwWindowVisibleCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isVisible];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwWindowVisibleCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwWindowMaximizedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isZoomed];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwWindowMaximizedCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1377,21 +1543,44 @@ GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwFramebufferTransparentCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return ![window->ns.object isOpaque] && ![window->ns.view isOpaque];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwFramebufferTransparentCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowResizableCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
     [window->ns.object setStyleMask:getStyleMask(window)];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowResizableCocoa(_GLFWwindow* window, GLFWbool enabled)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
@@ -1399,7 +1588,14 @@ void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
     [window->ns.object makeFirstResponder:window->ns.view];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
@@ -1409,27 +1605,55 @@ void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
         [window->ns.object setLevel:NSNormalWindowLevel];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowMousePassthroughCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
     [window->ns.object setIgnoresMouseEvents:enabled];
     }
 }
+#else // NEW_APPLE
+void _glfwSetWindowMousePassthroughCocoa(_GLFWwindow* window, GLFWbool enabled)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return (float) [window->ns.object alphaValue];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+    return 0.0f;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetWindowOpacityCocoa(_GLFWwindow* window, float opacity)
 {
     @autoreleasepool {
     [window->ns.object setAlphaValue:opacity];
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwSetWindowOpacityCocoa(_GLFWwindow* window, float opacity)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 void _glfwSetRawMouseMotionCocoa(_GLFWwindow *window, GLFWbool enabled)
 {
@@ -1442,6 +1666,7 @@ GLFWbool _glfwRawMouseMotionSupportedCocoa(void)
     return GLFW_FALSE;
 }
 
+#if NEW_APPLE
 void _glfwPollEventsCocoa(void)
 {
     @autoreleasepool {
@@ -1460,7 +1685,14 @@ void _glfwPollEventsCocoa(void)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwPollEventsCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwWaitEventsCocoa(void)
 {
     @autoreleasepool {
@@ -1478,7 +1710,14 @@ void _glfwWaitEventsCocoa(void)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwWaitEventsCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwWaitEventsTimeoutCocoa(double timeout)
 {
     @autoreleasepool {
@@ -1495,7 +1734,14 @@ void _glfwWaitEventsTimeoutCocoa(double timeout)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwWaitEventsTimeoutCocoa(double timeout)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwPostEmptyEventCocoa(void)
 {
     @autoreleasepool {
@@ -1512,6 +1758,11 @@ void _glfwPostEmptyEventCocoa(void)
     [NSApp postEvent:event atStart:YES];
 
     } // autoreleasepool
+}
+#else // NEW_APPLE
+void _glfwPostEmptyEventCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED");
 }
 #endif // NEW_APPLE
 
@@ -1662,6 +1913,7 @@ int _glfwGetKeyScancodeCocoa(int key)
 int _glfwGetKeyScancodeCocoa(int key)
 {
     KFX_DBG("NOT IMPLEMENTED");
+    return -1;
 }
 #endif // NEW_APPLE
 
