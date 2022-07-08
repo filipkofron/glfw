@@ -102,14 +102,16 @@ typedef struct VkMetalSurfaceCreateInfoEXT
 typedef VkResult (APIENTRY *PFN_vkCreateMacOSSurfaceMVK)(VkInstance,const VkMacOSSurfaceCreateInfoMVK*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 typedef VkResult (APIENTRY *PFN_vkCreateMetalSurfaceEXT)(VkInstance,const VkMetalSurfaceCreateInfoEXT*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 
-#define GLFW_COCOA_WINDOW_STATE         _GLFWwindowNS  ns;
 #endif // NEW_APPLE
+#define GLFW_COCOA_WINDOW_STATE         _GLFWwindowNS  ns;
 #define GLFW_COCOA_LIBRARY_WINDOW_STATE _GLFWlibraryNS ns;
 #if NEW_APPLE
 #define GLFW_COCOA_MONITOR_STATE        _GLFWmonitorNS ns;
 #define GLFW_COCOA_CURSOR_STATE         _GLFWcursorNS  ns;
+#endif // NEW_APPLE
 
 #define GLFW_NSGL_CONTEXT_STATE         _GLFWcontextNSGL nsgl;
+#if NEW_APPLE
 #define GLFW_NSGL_LIBRARY_CONTEXT_STATE _GLFWlibraryNSGL nsgl;
 
 // HIToolbox.framework pointer typedefs
@@ -121,7 +123,7 @@ typedef void* (*PFN_TISGetInputSourceProperty)(TISInputSourceRef,CFStringRef);
 typedef UInt8 (*PFN_LMGetKbdType)(void);
 #define LMGetKbdType _glfw.ns.tis.GetKbdType
 
-
+#endif // NEW_APPLE
 // NSGL-specific per-context data
 //
 typedef struct _GLFWcontextNSGL
@@ -129,6 +131,8 @@ typedef struct _GLFWcontextNSGL
     id                pixelFormat;
     id                object;
 } _GLFWcontextNSGL;
+
+#if NEW_APPLE
 
 // NSGL-specific global data
 //
@@ -138,6 +142,7 @@ typedef struct _GLFWlibraryNSGL
     CFBundleRef     framework;
 } _GLFWlibraryNSGL;
 
+#endif // NEW_APPLE
 // Cocoa-specific per-window data
 //
 typedef struct _GLFWwindowNS
@@ -161,8 +166,6 @@ typedef struct _GLFWwindowNS
     // This is kept to counteract Cocoa doing the same internally
     double          cursorWarpDeltaX, cursorWarpDeltaY;
 } _GLFWwindowNS;
-
-#endif // NEW_APPLE
 
 // Cocoa-specific global data
 //
@@ -316,14 +319,11 @@ GLFWbool _glfwCreateContextNSGL(_GLFWwindow* window,
 void _glfwDestroyContextNSGL(_GLFWwindow* window);
 
 #if !NEW_APPLE
-#define GLFW_COCOA_WINDOW_STATE
 #define GLFW_COCOA_MONITOR_STATE
 #define GLFW_COCOA_CURSOR_STATE
-
-#define GLFW_NSGL_CONTEXT_STATE
 #define GLFW_NSGL_LIBRARY_CONTEXT_STATE
 
 #include <stdio.h>
-#define KFX_DBG(...) printf("%s@%s:%i: ", __FUNCTION__, strrchr(__FILE__, '/') + 1, __LINE__); printf (__VA_ARGS__)
+#define KFX_DBG(...) printf("%s@%s:%i: ", __FUNCTION__, strrchr(__FILE__, '/') + 1, __LINE__); printf (__VA_ARGS__); printf("\n")
 
 #endif

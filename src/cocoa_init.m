@@ -495,13 +495,13 @@ void* _glfwLoadLocalVulkanLoaderCocoa(void)
 #if NEW_APPLE
 #define NOT_IMPLEMENTED_OLD_APPLE(function) function
 #else
-static void NotImplemented()
+/*static void NotImplemented()
 {
     KFX_DBG("Not implemented");
     abort();
-}
+}*/
 
-#define NOT_IMPLEMENTED_OLD_APPLE(function) NotImplemented
+#define NOT_IMPLEMENTED_OLD_APPLE(function) NULL
 #endif // NEW_APPLE
 
 GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
@@ -510,7 +510,7 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
     {
         GLFW_PLATFORM_COCOA,
         _glfwInitCocoa,
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwTerminateCocoa),
+        _glfwTerminateCocoa,
         NOT_IMPLEMENTED_OLD_APPLE(_glfwGetCursorPosCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorPosCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorModeCocoa),
@@ -537,7 +537,7 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
         NOT_IMPLEMENTED_OLD_APPLE(_glfwGetVideoModeCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwGetGammaRampCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetGammaRampCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateWindowCocoa),
+        _glfwCreateWindowCocoa,
         NOT_IMPLEMENTED_OLD_APPLE(_glfwDestroyWindowCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowTitleCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowIconCocoa),
@@ -671,20 +671,28 @@ int _glfwInitCocoa(void)
 
 #endif // NEW_APPLE
 
+#if !NEW_APPLE
+    [pool release];
+#endif
+
     return GLFW_TRUE;
 
 #if NEW_APPLE
     } // autoreleasepool
-#else
-    [pool release];
 #endif
 }
 
-#ifdef NEW_APPLE
 void _glfwTerminateCocoa(void)
 {
+#if NEW_APPLE
     @autoreleasepool {
+#else
+    KFX_DBG("terminate");
 
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+#endif // NEW_APPLE
+
+#if NEW_APPLE
     if (_glfw.ns.inputSource)
     {
         CFRelease(_glfw.ns.inputSource);
@@ -704,19 +712,25 @@ void _glfwTerminateCocoa(void)
         [_glfw.ns.delegate release];
         _glfw.ns.delegate = nil;
     }
+#endif // NEW_APPLE
 
     if (_glfw.ns.helper)
     {
+
+#if NEW_APPLE
         [[NSNotificationCenter defaultCenter]
             removeObserver:_glfw.ns.helper
                       name:NSTextInputContextKeyboardSelectionDidChangeNotification
                     object:nil];
         [[NSNotificationCenter defaultCenter]
             removeObserver:_glfw.ns.helper];
+#endif // NEW_APPLE
+
         [_glfw.ns.helper release];
         _glfw.ns.helper = nil;
     }
 
+#if NEW_APPLE
     if (_glfw.ns.keyUpMonitor)
         [NSEvent removeMonitor:_glfw.ns.keyUpMonitor];
 
@@ -725,8 +739,11 @@ void _glfwTerminateCocoa(void)
     _glfwTerminateNSGL();
     _glfwTerminateEGL();
     _glfwTerminateOSMesa();
-
-    } // autoreleasepool
-}
-
 #endif // NEW_APPLE
+
+#if NEW_APPLE
+    } // autoreleasepool
+#else // NEW_APPLE
+    [pool release];
+#endif // NEW_APPLE
+}
