@@ -36,7 +36,7 @@
 #include <IOKit/graphics/IOGraphicsLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 
 // Get the name of the specified display, or NULL

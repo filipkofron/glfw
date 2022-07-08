@@ -28,7 +28,7 @@
 #include <IOKit/IOCFPlugIn.h>
 #include <IOKit/hid/IOHIDKeys.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 #define GLFW_COCOA_JOYSTICK_STATE         _GLFWjoystickNS ns;
 #define GLFW_COCOA_LIBRARY_JOYSTICK_STATE

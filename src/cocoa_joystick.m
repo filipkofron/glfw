@@ -38,7 +38,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <Kernel/IOKit/hidsystem/IOHIDUsageTables.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 
 // Joystick element information

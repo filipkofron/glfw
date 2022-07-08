@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <math.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 static void makeContextCurrentNSGL(_GLFWwindow* window)
 {

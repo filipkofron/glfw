@@ -31,7 +31,7 @@
 #include <float.h>
 #include <string.h>
 
-#ifdef NEW_APPLE
+#if NEW_APPLE
 
 // Returns the style mask corresponding to the window settings
 //
@@ -213,8 +213,6 @@ static NSUInteger translateKeyToModifierFlag(int key)
 //
 static const NSRange kEmptyRange = { NSNotFound, 0 };
 
-
-#endif // NEW_APPLE
 //------------------------------------------------------------------------
 // Delegate for window related notifications
 //------------------------------------------------------------------------
@@ -246,7 +244,6 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)windowDidResize:(NSNotification *)notification
 {
-#if NEW_APPLE
     if (window->context.source == GLFW_NATIVE_CONTEXT_API)
         [window->context.nsgl.object update];
 
@@ -278,12 +275,10 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
         window->ns.height = contentRect.size.height;
         _glfwInputWindowSize(window, contentRect.size.width, contentRect.size.height);
     }
-#endif // NEW_APPLE
 }
 
 - (void)windowDidMove:(NSNotification *)notification
 {
-#if NEW_APPLE
     if (window->context.source == GLFW_NATIVE_CONTEXT_API)
         [window->context.nsgl.object update];
 
@@ -293,7 +288,6 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     int x, y;
     _glfwGetWindowPosCocoa(window, &x, &y);
     _glfwInputWindowPos(window, x, y);
-#endif // NEW_APPLE
 }
 
 - (void)windowDidMiniaturize:(NSNotification *)notification
@@ -314,13 +308,11 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
-#if NEW_APPLE
     if (_glfw.ns.disabledCursorWindow == window)
         _glfwCenterCursorInContentArea(window);
 
     _glfwInputWindowFocus(window, GLFW_TRUE);
     updateCursorMode(window);
-#endif // NEW_APPLE
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification
@@ -333,12 +325,10 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)windowDidChangeOcclusionState:(NSNotification* )notification
 {
-#if NEW_APPLE
     if ([window->ns.object occlusionState] & NSWindowOcclusionStateVisible)
         window->ns.occluded = GLFW_FALSE;
     else
         window->ns.occluded = GLFW_TRUE;
-#endif // NEW_APPLE
 }
 
 @end
@@ -346,7 +336,6 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 //------------------------------------------------------------------------
 // Content view class for the GLFW window
 //------------------------------------------------------------------------
-#if NEW_APPLE
 @interface GLFWContentView : NSView <NSTextInputClient>
 {
     _GLFWwindow* window;
@@ -357,18 +346,6 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 - (instancetype)initWithGlfwWindow:(_GLFWwindow *)initWindow;
 
 @end
-#else // NEW_APPLE
-@interface GLFWContentView : NSView <NSTextInput>
-{
-    _GLFWwindow* window;
-    NSTrackingArea* trackingArea;
-    NSMutableAttributedString* markedText;
-}
-
-- (instancetype)initWithGlfwWindow:(_GLFWwindow *)initWindow;
-
-@end
-#endif // NEW_APPLE
 
 @implementation GLFWContentView
 
@@ -844,7 +821,6 @@ static GLFWbool createNativeWindow(_GLFWwindow* window,
         [window->ns.object setLevel:NSMainMenuWindowLevel + 1];
     else
     {
-#if NEW_APPLE
         [(NSWindow*) window->ns.object center];
         _glfw.ns.cascadePoint =
             NSPointToCGPoint([window->ns.object cascadeTopLeftFromPoint:
@@ -863,13 +839,10 @@ static GLFWbool createNativeWindow(_GLFWwindow* window,
 
         if (wndconfig->maximized)
             [window->ns.object zoom:nil];
-#endif // NEW_APPLE
     }
 
-#if NEW_APPLE
     if (strlen(wndconfig->ns.frameName))
         [window->ns.object setFrameAutosaveName:@(wndconfig->ns.frameName)];
-#endif // NEW_APPLE
 
     window->ns.view = [[GLFWContentView alloc] initWithGlfwWindow:window];
     window->ns.retina = wndconfig->ns.retina;
@@ -899,8 +872,6 @@ static GLFWbool createNativeWindow(_GLFWwindow* window,
     return GLFW_TRUE;
 }
 
-#if NEW_APPLE
-
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
@@ -916,19 +887,13 @@ float _glfwTransformYCocoa(float y)
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
-
+#if NEW_APPLE
 GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
                                 const _GLFWwndconfig* wndconfig,
                                 const _GLFWctxconfig* ctxconfig,
                                 const _GLFWfbconfig* fbconfig)
 {
-#if NEW_APPLE
     @autoreleasepool {
-#else
-    KFX_DBG("init");
-
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-#endif // NEW_APPLE
 
     if (!createNativeWindow(window, wndconfig, fbconfig))
         return GLFW_FALSE;
@@ -988,15 +953,25 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
         }
     }
 
-#if !NEW_APPLE
-    [pool release];
-#endif
     return GLFW_TRUE;
 
-#if NEW_APPLE
     } // autoreleasepool
-#endif
 }
+#else // NEW_APPLE
+GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
+                                const _GLFWwndconfig* wndconfig,
+                                const _GLFWctxconfig* ctxconfig,
+                                const _GLFWfbconfig* fbconfig)
+{
+    KFX_DBG("init");
+
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    [pool release];
+
+    return GLFW_TRUE;
+}
+#endif // NEW_APPLE
 
 #if NEW_APPLE
 void _glfwDestroyWindowCocoa(_GLFWwindow* window)

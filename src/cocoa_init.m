@@ -304,12 +304,10 @@ static void createKeyTables(void)
     }
 }
 
-#endif // NEW_APPLE
 // Retrieve Unicode data for the current keyboard layout
 //
 static GLFWbool updateUnicodeData(void)
 {
-#if NEW_APPLE
     if (_glfw.ns.inputSource)
     {
         CFRelease(_glfw.ns.inputSource);
@@ -334,14 +332,9 @@ static GLFWbool updateUnicodeData(void)
                         "Cocoa: Failed to retrieve keyboard layout Unicode data");
         return GLFW_FALSE;
     }
-#else
-    KFX_DBG("Dummy stub, not implemented");
-#endif
 
     return GLFW_TRUE;
 }
-
-#if NEW_APPLE
 
 // Load HIToolbox.framework and the TIS symbols we need from it
 //
@@ -386,8 +379,6 @@ static GLFWbool initializeTIS(void)
     return updateUnicodeData();
 }
 
-#endif // NEW_APPLE
-
 @interface GLFWHelper : NSObject
 @end
 
@@ -403,8 +394,6 @@ static GLFWbool initializeTIS(void)
 }
 
 @end // GLFWHelper
-
-#if NEW_APPLE
 
 @interface GLFWApplicationDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -586,15 +575,10 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
     return GLFW_TRUE;
 }
 
+#if NEW_APPLE
 int _glfwInitCocoa(void)
 {
-#if NEW_APPLE
     @autoreleasepool {
-#else
-    KFX_DBG("init");
-
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-#endif // NEW_APPLE
 
     _glfw.ns.helper = [[GLFWHelper alloc] init];
 
@@ -604,7 +588,6 @@ int _glfwInitCocoa(void)
 
     [NSApplication sharedApplication];
 
-#if NEW_APPLE
     _glfw.ns.delegate = [[GLFWApplicationDelegate alloc] init];
     if (_glfw.ns.delegate == nil)
     {
@@ -614,11 +597,6 @@ int _glfwInitCocoa(void)
     }
 
     [NSApp setDelegate:_glfw.ns.delegate];
-#else // NEW_APPLE
-    KFX_DBG("NSApplicationDelegate not implemented");
-#endif // NEW_APPLE
-
-#if NEW_APPLE
     NSEvent* (^block)(NSEvent*) = ^ NSEvent* (NSEvent* event)
     {
         if ([event modifierFlags] & NSEventModifierFlagCommand)
@@ -631,11 +609,6 @@ int _glfwInitCocoa(void)
         [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                               handler:block];
 
-#else // NEW_APPLE
-    KFX_DBG("keyUpMonitor not implemented");
-#endif // NEW_APPLE
-
-#if NEW_APPLE
     if (_glfw.hints.init.ns.chdir)
         changeToResourcesDirectory();
 
@@ -669,30 +642,36 @@ int _glfwInitCocoa(void)
     if (_glfw.hints.init.ns.menubar)
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-#endif // NEW_APPLE
-
-#if !NEW_APPLE
-    [pool release];
-#endif
-
     return GLFW_TRUE;
 
-#if NEW_APPLE
     } // autoreleasepool
-#endif
 }
-
-void _glfwTerminateCocoa(void)
+#else // NEW_APPLE
+int _glfwInitCocoa(void)
 {
-#if NEW_APPLE
-    @autoreleasepool {
-#else
-    KFX_DBG("terminate");
+    KFX_DBG("init");
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-#endif // NEW_APPLE
+
+    /*_glfw.ns.helper = [[GLFWHelper alloc] init];
+
+    [NSThread detachNewThreadSelector:@selector(doNothing:)
+                             toTarget:_glfw.ns.helper
+                           withObject:nil];
+
+    [NSApplication sharedApplication];*/
+
+    [pool release];
+
+    return GLFW_TRUE;
+}
+#endif
 
 #if NEW_APPLE
+void _glfwTerminateCocoa(void)
+{
+    @autoreleasepool {
+
     if (_glfw.ns.inputSource)
     {
         CFRelease(_glfw.ns.inputSource);
@@ -712,25 +691,20 @@ void _glfwTerminateCocoa(void)
         [_glfw.ns.delegate release];
         _glfw.ns.delegate = nil;
     }
-#endif // NEW_APPLE
 
     if (_glfw.ns.helper)
     {
-
-#if NEW_APPLE
         [[NSNotificationCenter defaultCenter]
             removeObserver:_glfw.ns.helper
                       name:NSTextInputContextKeyboardSelectionDidChangeNotification
                     object:nil];
         [[NSNotificationCenter defaultCenter]
             removeObserver:_glfw.ns.helper];
-#endif // NEW_APPLE
 
         [_glfw.ns.helper release];
         _glfw.ns.helper = nil;
     }
 
-#if NEW_APPLE
     if (_glfw.ns.keyUpMonitor)
         [NSEvent removeMonitor:_glfw.ns.keyUpMonitor];
 
@@ -739,11 +713,21 @@ void _glfwTerminateCocoa(void)
     _glfwTerminateNSGL();
     _glfwTerminateEGL();
     _glfwTerminateOSMesa();
-#endif // NEW_APPLE
 
-#if NEW_APPLE
     } // autoreleasepool
-#else // NEW_APPLE
-    [pool release];
-#endif // NEW_APPLE
 }
+#else // NEW_APPLE
+void _glfwTerminateCocoa(void)
+{
+    KFX_DBG("terminate");
+
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    /*if (_glfw.ns.helper)
+    {
+        _glfw.ns.helper = nil;
+    }*/
+
+    [pool release];
+}
+#endif // NEW_APPLE
