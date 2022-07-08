@@ -500,19 +500,19 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
         GLFW_PLATFORM_COCOA,
         _glfwInitCocoa,
         _glfwTerminateCocoa,
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetCursorPosCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorPosCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorModeCocoa),
+        _glfwGetCursorPosCocoa,
+        _glfwSetCursorPosCocoa,
+        _glfwSetCursorModeCocoa,
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetRawMouseMotionCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwRawMouseMotionSupportedCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateCursorCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateStandardCursorCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwDestroyCursorCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetCursorCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetScancodeNameCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetKeyScancodeCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwSetClipboardStringCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetClipboardStringCocoa),
+        _glfwCreateCursorCocoa,
+        _glfwCreateStandardCursorCocoa,
+        _glfwDestroyCursorCocoa,
+        _glfwSetCursorCocoa,
+        _glfwGetScancodeNameCocoa,
+        _glfwGetKeyScancodeCocoa,
+        _glfwSetClipboardStringCocoa,
+        _glfwGetClipboardStringCocoa,
         NOT_IMPLEMENTED_OLD_APPLE(_glfwInitJoysticksCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwTerminateJoysticksCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwPollJoystickCocoa),
@@ -527,7 +527,7 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
         NOT_IMPLEMENTED_OLD_APPLE(_glfwGetGammaRampCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetGammaRampCocoa),
         _glfwCreateWindowCocoa,
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwDestroyWindowCocoa),
+        _glfwDestroyWindowCocoa,
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowTitleCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwSetWindowIconCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwGetWindowPosCocoa),
@@ -563,12 +563,12 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
         NOT_IMPLEMENTED_OLD_APPLE(_glfwWaitEventsCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwWaitEventsTimeoutCocoa),
         NOT_IMPLEMENTED_OLD_APPLE(_glfwPostEmptyEventCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLPlatformCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLNativeDisplayCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetEGLNativeWindowCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetRequiredInstanceExtensionsCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwGetPhysicalDevicePresentationSupportCocoa),
-        NOT_IMPLEMENTED_OLD_APPLE(_glfwCreateWindowSurfaceCocoa),
+        _glfwGetEGLPlatformCocoa,
+        _glfwGetEGLNativeDisplayCocoa,
+        _glfwGetEGLNativeWindowCocoa,
+        _glfwGetRequiredInstanceExtensionsCocoa,
+        _glfwGetPhysicalDevicePresentationSupportCocoa,
+        _glfwCreateWindowSurfaceCocoa,
     };
 
     *platform = cocoa;
@@ -649,7 +649,7 @@ int _glfwInitCocoa(void)
 #else // NEW_APPLE
 int _glfwInitCocoa(void)
 {
-    KFX_DBG("init");
+    KFX_DBG("NOT IMPLEMENTED");
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
@@ -719,7 +719,7 @@ void _glfwTerminateCocoa(void)
 #else // NEW_APPLE
 void _glfwTerminateCocoa(void)
 {
-    KFX_DBG("terminate");
+    KFX_DBG("NOT IMPLEMENTED");
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
