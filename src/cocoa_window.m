@@ -884,6 +884,446 @@ float _glfwTransformYCocoa(float y)
 }
 #endif // NEW_APPLE
 
+#if !NEW_APPLE
+//------------------------------------------------------------------------
+// GLFW window class
+//------------------------------------------------------------------------
+
+@interface GLFWWindow : NSWindow {}
+/* These are needed for borderless/fullscreen windows */
+- (BOOL)canBecomeKeyWindow;
+- (BOOL)canBecomeMainWindow;
+- (void)sendEvent:(NSEvent *)event;
+@end
+
+@implementation GLFWWindow
+- (BOOL)canBecomeKeyWindow
+{
+    return YES;
+}
+
+- (BOOL)canBecomeMainWindow
+{
+    return YES;
+}
+
+- (void)sendEvent:(NSEvent *)event
+{
+  [super sendEvent:event];
+
+  if ([event type] != NSLeftMouseUp) {
+      return;
+  }
+
+//   id delegate = [self delegate];
+//   if (![delegate isKindOfClass:[Cocoa_WindowListener class]]) {
+//       return;
+//   }
+
+//   if ([delegate isMoving]) {
+//       [delegate windowDidFinishMoving];
+//   }
+}
+@end
+
+@interface GLFWOpenGLContext : NSOpenGLContext {
+//    SDL_atomic_t dirty;
+//    SDL_Window *window;
+}
+
+- (id)initWithFormat:(NSOpenGLPixelFormat *)format
+        shareContext:(NSOpenGLContext *)share;
+- (void)scheduleUpdate;
+- (void)updateIfNeeded;
+//- (void)setWindow:(SDL_Window *)window;
+
+@end
+
+@implementation GLFWOpenGLContext : NSOpenGLContext
+
+- (id)initWithFormat:(NSOpenGLPixelFormat *)format
+        shareContext:(NSOpenGLContext *)share
+{
+    self = [super initWithFormat:format shareContext:share];
+    // if (self) {
+    //     SDL_AtomicSet(&self->dirty, 0);
+    //     self->window = NULL;
+    // }
+    return self;
+}
+
+- (void)scheduleUpdate
+{
+    // SDL_AtomicAdd(&self->dirty, 1);
+}
+
+/* This should only be called on the thread on which a user is using the context. */
+- (void)updateIfNeeded
+{
+    // int value = SDL_AtomicSet(&self->dirty, 0);
+    // if (value > 0) {
+        /* We call the real underlying update here, since -[SDLOpenGLContext update] just calls us. */
+        [super update];
+    // }
+}
+
+/* This should only be called on the thread on which a user is using the context. */
+- (void)update
+{
+    /* This ensures that regular 'update' calls clear the atomic dirty flag. */
+    [self scheduleUpdate];
+    [self updateIfNeeded];
+}
+
+/* Updates the drawable for the contexts and manages related state. */
+// - (void)setWindow:(SDL_Window *)newWindow
+// {
+//     if (self->window) {
+//         SDL_WindowData *oldwindowdata = (SDL_WindowData *)self->window->driverdata;
+
+//         /* Make sure to remove us from the old window's context list, or we'll get scheduled updates from it too. */
+//         NSMutableArray *contexts = oldwindowdata->nscontexts;
+//         @synchronized (contexts) {
+//             [contexts removeObject:self];
+//         }
+//     }
+
+//     self->window = newWindow;
+
+//     if (newWindow) {
+//         SDL_WindowData *windowdata = (SDL_WindowData *)newWindow->driverdata;
+
+//         /* Now sign up for scheduled updates for the new window. */
+//         NSMutableArray *contexts = windowdata->nscontexts;
+//         @synchronized (contexts) {
+//             [contexts addObject:self];
+//         }
+
+//         if ([self view] != [windowdata->nswindow contentView]) {
+//             [self setView:[windowdata->nswindow contentView]];
+//             if (self == [NSOpenGLContext currentContext]) {
+//                 [self update];
+//             } else {
+//                 [self scheduleUpdate];
+//             }
+//         }
+//     } else {
+//         [self clearDrawable];
+//         if (self == [NSOpenGLContext currentContext]) {
+//             [self update];
+//         } else {
+//             [self scheduleUpdate];
+//         }
+//     }
+// }
+
+@end
+
+@interface GLFWView : NSView
+
+/* The default implementation doesn't pass rightMouseDown to responder chain */
+- (void)rightMouseDown:(NSEvent *)theEvent;
+@end
+
+@implementation GLFWView
+- (void)rightMouseDown:(NSEvent *)theEvent
+{
+    [[self nextResponder] rightMouseDown:theEvent];
+}
+
+- (void)resetCursorRects
+{
+    [super resetCursorRects];
+    // SDL_Mouse *mouse = SDL_GetMouse();
+
+    // if (mouse->cursor_shown && mouse->cur_cursor && !mouse->relative_mode) {
+    //     [self addCursorRect:[self bounds]
+    //                  cursor:mouse->cur_cursor->driverdata];
+    // } else {
+    //     [self addCursorRect:[self bounds]
+    //                  cursor:[NSCursor invisibleCursor]];
+    // }
+}
+@end
+
+// struct _GLFWwndconfig
+// {
+//     int           width;
+//     int           height;
+//     const char*   title;
+//     GLFWbool      resizable;
+//     GLFWbool      visible;
+//     GLFWbool      decorated;
+//     GLFWbool      focused;
+//     GLFWbool      autoIconify;
+//     GLFWbool      floating;
+//     GLFWbool      maximized;
+//     GLFWbool      centerCursor;
+//     GLFWbool      focusOnShow;
+//     GLFWbool      mousePassthrough;
+//     GLFWbool      scaleToMonitor;
+//     struct {
+//         GLFWbool  retina;
+//         char      frameName[256];
+//     } ns;
+//     struct {
+//         char      className[256];
+//         char      instanceName[256];
+//     } x11;
+//     struct {
+//         GLFWbool  keymenu;
+//     } win32;
+// };
+
+static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLFWbool resizable)
+{
+    unsigned int style = 0;
+
+    if (fullscreen) {
+        style = NSBorderlessWindowMask;
+    } else {
+        if (borderless) {
+            style = NSBorderlessWindowMask;
+        } else {
+            style = (NSTitledWindowMask|NSClosableWindowMask|NSMiniaturizableWindowMask);
+        }
+        if (resizable) {
+            style |= NSResizableWindowMask;
+        }
+    }
+
+    return style;
+}
+
+static int MakeCurrentGLContext(GLFWOpenGLContext* context)
+{
+    KFX_DBG("Make current context: %p", context);
+
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    if (context) {
+        //[nscontext setWindow:window];
+        [context updateIfNeeded];
+        [context makeCurrentContext];
+    } else {
+        [NSOpenGLContext clearCurrentContext];
+    }
+
+    [pool release];
+    return 0;
+}
+
+static GLFWglproc getProcAddressNSGL(const char* procname)
+{
+    CFStringRef symbolName = CFStringCreateWithCString(kCFAllocatorDefault,
+                                                       procname,
+                                                       kCFStringEncodingASCII);
+
+    //_glfw.nsgl.framework =
+//        CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl"))
+
+    GLFWglproc symbol = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl")),
+                                                          symbolName);
+
+    CFRelease(symbolName);
+
+    return symbol;
+}
+
+static void swapBuffersNSGL(_GLFWwindow* window)
+{
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    // HACK: Simulate vsync with usleep as NSGL swap interval does not apply to
+    //       windows with a non-visible occlusion state
+    // if (window->ns.occluded)
+    // {
+    //     int interval = 0;
+    //     [window->context.nsgl.object getValues:&interval
+    //                               forParameter:NSOpenGLContextParameterSwapInterval];
+
+    //     if (interval > 0)
+    //     {
+    //         const double framerate = 60.0;
+    //         const uint64_t frequency = _glfwPlatformGetTimerFrequency();
+    //         const uint64_t value = _glfwPlatformGetTimerValue();
+
+    //         const double elapsed = value / (double) frequency;
+    //         const double period = 1.0 / framerate;
+    //         const double delay = period - fmod(elapsed, period);
+
+    //         usleep(floorl(delay * 1e6));
+    //     }
+    // }
+
+    [window->context.nsgl.object flushBuffer];
+
+    [pool release];
+}
+
+static void swapIntervalNSGL(int interval)
+{
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
+    if (window)
+    {
+        [window->context.nsgl.object setValues:&interval
+                                  forParameter:NSOpenGLCPSwapInterval];
+    }
+
+    [pool release];
+}
+
+
+static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow* window)
+{
+    KFX_DBG("Many missing coeffs");
+    // SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
+    // SDL_VideoDisplay *display = SDL_GetDisplayForWindow(window);
+    // SDL_DisplayData *displaydata = (SDL_DisplayData *)display->driverdata;
+    NSOpenGLPixelFormatAttribute attr[32];
+    NSOpenGLPixelFormat *fmt = NULL;
+    int i = 0;
+    const char *glversion = NULL;
+    int glversion_major;
+    int glversion_minor;
+
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    attr[i++] = NSOpenGLPFAColorSize;
+    //attr[i++] = SDL_BYTESPERPIXEL(display->current_mode.format)*8;
+
+    attr[i++] = NSOpenGLPFADepthSize;
+    // attr[i++] = _this->gl_config.depth_size;
+
+    // if (_this->gl_config.double_buffer) {
+    //     attr[i++] = NSOpenGLPFADoubleBuffer;
+    // }
+
+    // if (_this->gl_config.stereo) {
+    //     attr[i++] = NSOpenGLPFAStereo;
+    // }
+
+    // if (_this->gl_config.stencil_size) {
+    //     attr[i++] = NSOpenGLPFAStencilSize;
+    //     attr[i++] = _this->gl_config.stencil_size;
+    // }
+
+    // if ((_this->gl_config.accum_red_size +
+    //      _this->gl_config.accum_green_size +
+    //      _this->gl_config.accum_blue_size +
+    //      _this->gl_config.accum_alpha_size) > 0) {
+    //     attr[i++] = NSOpenGLPFAAccumSize;
+    //     attr[i++] = _this->gl_config.accum_red_size + _this->gl_config.accum_green_size + _this->gl_config.accum_blue_size + _this->gl_config.accum_alpha_size;
+    // }
+
+    // if (_this->gl_config.multisamplebuffers) {
+    //     attr[i++] = NSOpenGLPFASampleBuffers;
+    //     attr[i++] = _this->gl_config.multisamplebuffers;
+    // }
+
+    // if (_this->gl_config.multisamplesamples) {
+    //     attr[i++] = NSOpenGLPFASamples;
+    //     attr[i++] = _this->gl_config.multisamplesamples;
+    //     attr[i++] = NSOpenGLPFANoRecovery;
+    // }
+
+    // if (_this->gl_config.accelerated >= 0) {
+    //     if (_this->gl_config.accelerated) {
+    //         attr[i++] = NSOpenGLPFAAccelerated;
+    //     } else {
+    //         attr[i++] = NSOpenGLPFARendererID;
+    //         attr[i++] = kCGLRendererGenericFloatID;
+    //     }
+    // }
+
+    attr[i++] = NSOpenGLPFAScreenMask;
+    attr[i++] = CGDisplayIDToOpenGLDisplayMask(display);
+    attr[i] = 0;
+
+    fmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
+    if (fmt == nil) {
+        _glfwInputError(GLFW_FORMAT_UNAVAILABLE, "Failed creating OpenGL pixel format");
+        [pool release];
+        return NULL;
+    }
+
+    NSOpenGLContext* shareContext = nil;
+    // if (_this->gl_config.share_with_current_context) {
+    //     share_context = (NSOpenGLContext*)SDL_GL_GetCurrentContext();
+    // }
+
+    GLFWOpenGLContext* context = [[GLFWOpenGLContext alloc] initWithFormat:fmt shareContext:shareContext];
+
+    [fmt release];
+
+    if (context == nil) {
+        _glfwInputError(GLFW_PLATFORM_ERROR, "Failed creating OpenGL context");
+        [pool release];
+        return NULL;
+    }
+
+    [pool release];
+
+    if (MakeCurrentGLContext(context) < 0 ) {
+        [context release];
+        _glfwInputError(GLFW_PLATFORM_ERROR, "Failed making OpenGL context current");
+        return NULL;
+    }
+
+    // if (_this->gl_config.major_version < 3 &&
+    //     _this->gl_config.profile_mask == 0 &&
+    //     _this->gl_config.flags == 0) {
+    //     /* This is a legacy profile, so to match other backends, we're done. */
+    // } else {
+    //     const GLubyte *(APIENTRY * glGetStringFunc)(GLenum);
+
+    //     glGetStringFunc = (const GLubyte *(APIENTRY *)(GLenum)) SDL_GL_GetProcAddress("glGetString");
+    //     if (!glGetStringFunc) {
+    //         Cocoa_GL_DeleteContext(_this, context);
+    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed getting OpenGL glGetString entry point");
+    //         return NULL;
+    //     }
+
+    //     glversion = (const char *)glGetStringFunc(GL_VERSION);
+    //     if (glversion == NULL) {
+    //         Cocoa_GL_DeleteContext(_this, context);
+    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed getting OpenGL context version");
+    //         return NULL;
+    //     }
+
+    //     if (SDL_sscanf(glversion, "%d.%d", &glversion_major, &glversion_minor) != 2) {
+    //         Cocoa_GL_DeleteContext(_this, context);
+    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed parsing OpenGL context version");
+    //         return NULL;
+    //     }
+
+    //     if ((glversion_major < _this->gl_config.major_version) ||
+    //        ((glversion_major == _this->gl_config.major_version) && (glversion_minor < _this->gl_config.minor_version))) {
+    //         Cocoa_GL_DeleteContext(_this, context);
+    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed creating OpenGL context at version requested");
+    //         return NULL;
+    //     }
+
+    //     /* In the future we'll want to do this, but to match other platforms
+    //        we'll leave the OpenGL version the way it is for now
+    //      */
+    //     /*_this->gl_config.major_version = glversion_major;*/
+    //     /*_this->gl_config.minor_version = glversion_minor;*/
+    // }
+
+    // window->context.makeCurrent = makeContextCurrentNSGL;
+    window->context.swapBuffers = swapBuffersNSGL;
+    window->context.swapInterval = swapIntervalNSGL;
+    // window->context.extensionSupported = extensionSupportedNSGL;
+    window->context.getProcAddress = getProcAddressNSGL;
+    // window->context.destroy = destroyContextNSGL;
+
+    return context;
+}
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
@@ -966,6 +1406,86 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     KFX_DBG("NOT IMPLEMENTED");
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    KFX_DBG("TODO: Opening window on [0, 0], use automatic placement");
+    NSRect rect = {};
+    rect.origin.x = 0;
+    rect.origin.y = 0;
+    rect.size.width = wndconfig->width;
+    rect.size.height = wndconfig->height;
+
+    KFX_DBG("TODO: convert NSRect to native space via CGDisplayPixelsHigh(kCGDirectMainDisplay)");
+
+    NSArray* screens = [NSScreen screens];
+    KFX_DBG("Screens count: %i", [screens count]);
+    KFX_DBG("TODO: select proper screen");
+    NSScreen* screen = [screens objectAtIndex: 0];
+
+    unsigned int style = GetWindowStyle(GLFW_FALSE, GLFW_FALSE, wndconfig->resizable);
+    KFX_DBG("initWithContentRect:[%lf, %lf, %lf, %lf] styleMask:%u screen:%p",
+        rect.origin.x,
+        rect.origin.y,
+        rect.size.width,
+        rect.size.height,
+        style,
+        screen);
+
+    NSWindow* nswindow = [[GLFWWindow alloc] initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO screen:screen];
+    window->ns.nswindow = nswindow;
+
+    /* Create a default view for this window */
+    rect = [nswindow contentRectForFrameRect:[nswindow frame]];
+    NSView* contentView = [[GLFWView alloc] initWithFrame:rect];
+
+    // if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
+    //     if ([contentView respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
+    //         [contentView setWantsBestResolutionOpenGLSurface:YES];
+    //     }
+    // }
+
+    [nswindow setContentView: contentView];
+    /* Prevents the window's "window device" from being destroyed when it is
+     * hidden. See http://www.mikeash.com/pyblog/nsopenglcontext-and-one-shot.html
+     */
+     KFX_DBG("setOneShot");
+    [nswindow setOneShot:NO];
+
+
+    // Show window
+    KFX_DBG("makeKeyAndOrderFront");
+    [nswindow makeKeyAndOrderFront:nil];
+
+    KFX_DBG("makeFirstResponder");
+    [nswindow makeFirstResponder:contentView];
+    //[nswindow setTitle:wndconfig->title];
+    //[nswindow setDelegate:window->ns.delegate];
+    KFX_DBG("setAcceptsMouseMovedEvents");
+    [nswindow setAcceptsMouseMovedEvents:YES];
+
+    //[nswindow setRestorable:NO];
+
+    [contentView release];
+
+
+    uint32_t displayCount = 0;
+    CGGetOnlineDisplayList(0, NULL, &displayCount);
+    KFX_DBG("CGGetOnlineDisplayList count: %i", displayCount);
+    CGDirectDisplayID* displays = _glfw_calloc(displayCount, sizeof(CGDirectDisplayID));
+    CGGetOnlineDisplayList(displayCount, displays, &displayCount);
+
+    KFX_DBG("TODO: Taking the first display, use CGDisplayIsMain(displays[i]), skip CGDisplayMirrorsDisplay");
+    GLFWOpenGLContext* context = CreateGLContext(displays[0], window);
+    window->context.nsgl.object = context;
+
+    KFX_DBG("context: %p", context);
+
+    KFX_DBG("_glfwPlatformSetTls: %p", window);
+    _glfwPlatformSetTls(&_glfw.contextSlot, window);
+
+    _glfw_free(displays);
+
+
+
 
     [pool release];
 
@@ -1712,7 +2232,33 @@ void _glfwPollEventsCocoa(void)
 #else // NEW_APPLE
 void _glfwPollEventsCocoa(void)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("IS THIS CORRECT?");
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    // /* Update activity every 30 seconds to prevent screensaver */
+    // if (_this->suspend_screensaver) {
+    //     SDL_VideoData *data = (SDL_VideoData *)_this->driverdata;
+    //     Uint32 now = SDL_GetTicks();
+    //     if (!data->screensaver_activity ||
+    //         SDL_TICKS_PASSED(now, data->screensaver_activity + 30000)) {
+    //         UpdateSystemActivity(UsrActivity);
+    //         data->screensaver_activity = now;
+    //     }
+    // }
+
+    for (;;)
+    {
+        NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+                                            untilDate:[NSDate distantPast]
+                                               inMode:NSDefaultRunLoopMode
+                                              dequeue:YES];
+        if (event == nil)
+            break;
+
+        [NSApp sendEvent:event];
+    }
+
+    [pool release];
 }
 #endif // NEW_APPLE
 

@@ -5944,16 +5944,36 @@ static int glad_gl_find_core_gl(void) {
     GLAD_GL_VERSION_3_2 = (major == 3 && minor >= 2) || major > 3;
     GLAD_GL_VERSION_3_3 = (major == 3 && minor >= 3) || major > 3;
 
+    printf("KFX: GLAD GLAD_GL_VERSION_1_0: %i\n", GLAD_GL_VERSION_1_0);
+    printf("KFX: GLAD GLAD_GL_VERSION_1_1: %i\n", GLAD_GL_VERSION_1_1);
+    printf("KFX: GLAD GLAD_GL_VERSION_1_2: %i\n", GLAD_GL_VERSION_1_2);
+    printf("KFX: GLAD GLAD_GL_VERSION_1_3: %i\n", GLAD_GL_VERSION_1_3);
+    printf("KFX: GLAD GLAD_GL_VERSION_1_4: %i\n", GLAD_GL_VERSION_1_4);
+    printf("KFX: GLAD GLAD_GL_VERSION_1_5: %i\n", GLAD_GL_VERSION_1_5);
+    printf("KFX: GLAD GLAD_GL_VERSION_2_0: %i\n", GLAD_GL_VERSION_2_0);
+    printf("KFX: GLAD GLAD_GL_VERSION_2_1: %i\n", GLAD_GL_VERSION_2_1);
+    printf("KFX: GLAD GLAD_GL_VERSION_3_0: %i\n", GLAD_GL_VERSION_3_0);
+    printf("KFX: GLAD GLAD_GL_VERSION_3_1: %i\n", GLAD_GL_VERSION_3_1);
+    printf("KFX: GLAD GLAD_GL_VERSION_3_2: %i\n", GLAD_GL_VERSION_3_2);
+    printf("KFX: GLAD GLAD_GL_VERSION_3_3: %i\n", GLAD_GL_VERSION_3_3);
+
     return GLAD_MAKE_VERSION(major, minor);
 }
 
 int gladLoadGLUserPtr( GLADuserptrloadfunc load, void *userptr) {
     int version;
+    printf("KFX: GLAD gladLoadGLUserPtr: %p userptr: %p\n", load, userptr);
 
     glad_glGetString = (PFNGLGETSTRINGPROC) load(userptr, "glGetString");
+    printf("KFX: GLAD glad_glGetString: %p\n", glad_glGetString);
+
+    glad_glGetIntegerv = (PFNGLGETINTEGERVPROC) load(userptr, "glGetIntegerv");
+    printf("KFX: GLAD glad_glGetIntegerV: %p\n", glad_glGetIntegerv);
+
     if(glad_glGetString == NULL) return 0;
     if(glad_glGetString(GL_VERSION) == NULL) return 0;
     version = glad_gl_find_core_gl();
+    printf("KFX: GLAD core version found: %i\n", version);
 
     glad_gl_load_GL_VERSION_1_0(load, userptr);
     glad_gl_load_GL_VERSION_1_1(load, userptr);

@@ -743,9 +743,12 @@ GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
     _GLFWwindow* window;
     assert(procname != NULL);
 
+    KFX_DBG("Proc: '%s'", procname);
+
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
 
     window = _glfwPlatformGetTls(&_glfw.contextSlot);
+    KFX_DBG(" - window: %p", window);
     if (!window)
     {
         _glfwInputError(GLFW_NO_CURRENT_CONTEXT,
@@ -753,6 +756,12 @@ GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
         return NULL;
     }
 
-    return window->context.getProcAddress(procname);
+    KFX_DBG(" - window->context: %p", window->context);
+
+    GLFWglproc proc = window->context.getProcAddress(procname);
+
+    KFX_DBG(" - '%s' loaded: %p", procname, proc);
+
+    return proc;
 }
 

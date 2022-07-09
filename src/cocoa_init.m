@@ -657,9 +657,10 @@ int _glfwInitCocoa(void)
 
     [NSThread detachNewThreadSelector:@selector(doNothing:)
                              toTarget:_glfw.ns.helper
-                           withObject:nil];
+                           withObject:nil];*/
 
-    [NSApplication sharedApplication];*/
+    KFX_DBG("[NSApplication sharedApplication];");
+    [NSApplication sharedApplication];
 
     [pool release];
 

@@ -112,11 +112,11 @@ typedef VkResult (APIENTRY *PFN_vkCreateMetalSurfaceEXT)(VkInstance,const VkMeta
 #define GLFW_NSGL_CONTEXT_STATE         _GLFWcontextNSGL nsgl;
 #define GLFW_NSGL_LIBRARY_CONTEXT_STATE _GLFWlibraryNSGL nsgl;
 #else // NEW_APPLE
-#define GLFW_COCOA_WINDOW_STATE
+#define GLFW_COCOA_WINDOW_STATE         _GLFWwindowNS  ns;
 #define GLFW_COCOA_LIBRARY_WINDOW_STATE
 #define GLFW_COCOA_MONITOR_STATE
 #define GLFW_COCOA_CURSOR_STATE
-#define GLFW_NSGL_CONTEXT_STATE
+#define GLFW_NSGL_CONTEXT_STATE         _GLFWcontextNSGL nsgl;
 #define GLFW_NSGL_LIBRARY_CONTEXT_STATE
 #endif // NEW_APPLE
 
@@ -129,6 +129,7 @@ typedef void* (*PFN_TISGetInputSourceProperty)(TISInputSourceRef,CFStringRef);
 #define TISGetInputSourceProperty _glfw.ns.tis.GetInputSourceProperty
 typedef UInt8 (*PFN_LMGetKbdType)(void);
 #define LMGetKbdType _glfw.ns.tis.GetKbdType
+#endif // NEW_APPLE
 
 // NSGL-specific per-context data
 //
@@ -138,6 +139,7 @@ typedef struct _GLFWcontextNSGL
     id                object;
 } _GLFWcontextNSGL;
 
+#if NEW_APPLE
 // NSGL-specific global data
 //
 typedef struct _GLFWlibraryNSGL
@@ -222,7 +224,16 @@ typedef struct _GLFWcursorNS
     id              object;
 } _GLFWcursorNS;
 
-#endif // New_APPLE
+#endif // NEW_APPLE
+
+#if !NEW_APPLE
+// Cocoa-specific per-window data
+//
+typedef struct _GLFWwindowNS
+{
+    id              nswindow;
+} _GLFWwindowNS;
+#endif
 
 GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform);
 int _glfwInitCocoa(void);
