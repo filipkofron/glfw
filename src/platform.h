@@ -78,7 +78,7 @@
  #define GLFW_WIN32_LIBRARY_JOYSTICK_STATE
 #endif
 
-#if defined(_GLFW_COCOA) && NEW_APPLE
+#if defined(_GLFW_COCOA)
  #include "cocoa_joystick.h"
 #else
  #define GLFW_COCOA_JOYSTICK_STATE

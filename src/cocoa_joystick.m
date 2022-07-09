@@ -39,8 +39,6 @@
 #include <Kernel/IOKit/hidsystem/IOHIDUsageTables.h>
 
 #if NEW_APPLE
-
-
 // Joystick element information
 //
 typedef struct _GLFWjoyelementNS
@@ -295,12 +293,13 @@ static void removeCallback(void* context,
         }
     }
 }
-
+#endif // NEW_APPLE
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
 
+#if NEW_APPLE
 GLFWbool _glfwInitJoysticksCocoa(void)
 {
     CFMutableArrayRef matching;
@@ -377,7 +376,15 @@ GLFWbool _glfwInitJoysticksCocoa(void)
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, false);
     return GLFW_TRUE;
 }
+#else // NEW_APPLE
+GLFWbool _glfwInitJoysticksCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED - returning false");
+    return GLFW_FALSE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwTerminateJoysticksCocoa(void)
 {
     for (int jid = 0;  jid <= GLFW_JOYSTICK_LAST;  jid++)
@@ -392,8 +399,14 @@ void _glfwTerminateJoysticksCocoa(void)
         _glfw.ns.hidManager = NULL;
     }
 }
+#else // NEW_APPLE
+void _glfwTerminateJoysticksCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
-
+#if NEW_APPLE
 GLFWbool _glfwPollJoystickCocoa(_GLFWjoystick* js, int mode)
 {
     if (mode & _GLFW_POLL_AXES)
@@ -459,12 +472,20 @@ GLFWbool _glfwPollJoystickCocoa(_GLFWjoystick* js, int mode)
 
     return js->connected;
 }
+#else // NEW_APPLE
+GLFWbool _glfwPollJoystickCocoa(_GLFWjoystick* js, int mode)
+{
+    KFX_DBG("NOT IMPLEMENTED - returning false");
+    return GLFW_FALSE;
+}
+#endif // NEW_APPLE
 
 const char* _glfwGetMappingNameCocoa(void)
 {
     return "Mac OS X";
 }
 
+#if NEW_APPLE
 void _glfwUpdateGamepadGUIDCocoa(char* guid)
 {
     if ((strncmp(guid + 4, "000000000000", 12) == 0) &&
@@ -476,5 +497,9 @@ void _glfwUpdateGamepadGUIDCocoa(char* guid)
                 original, original + 16);
     }
 }
-
+#else // NEW_APPLE
+void _glfwUpdateGamepadGUIDCocoa(char* guid)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
 #endif // NEW_APPLE

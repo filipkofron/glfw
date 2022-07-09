@@ -287,7 +287,7 @@ static double getFallbackRefreshRate(CGDirectDisplayID displayID)
     IOObjectRelease(it);
     return refreshRate;
 }
-
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
@@ -295,6 +295,7 @@ static double getFallbackRefreshRate(CGDirectDisplayID displayID)
 
 // Poll for changes in the set of connected monitors
 //
+#if NEW_APPLE
 void _glfwPollMonitorsCocoa(void)
 {
     uint32_t displayCount;
@@ -380,9 +381,16 @@ void _glfwPollMonitorsCocoa(void)
     _glfw_free(disconnected);
     _glfw_free(displays);
 }
+#else // NEW_APPLE
+void _glfwPollMonitorsCocoa(void)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 // Change the current video mode
 //
+#if NEW_APPLE
 void _glfwSetVideoModeCocoa(_GLFWmonitor* monitor, const GLFWvidmode* desired)
 {
     GLFWvidmode current;
@@ -423,9 +431,16 @@ void _glfwSetVideoModeCocoa(_GLFWmonitor* monitor, const GLFWvidmode* desired)
 
     CFRelease(modes);
 }
+#else // NEW_APPLE
+void _glfwSetVideoModeCocoa(_GLFWmonitor* monitor, const GLFWvidmode* desired)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 // Restore the previously saved (original) video mode
 //
+#if NEW_APPLE
 void _glfwRestoreVideoModeCocoa(_GLFWmonitor* monitor)
 {
     if (monitor->ns.previousMode)
@@ -439,6 +454,12 @@ void _glfwRestoreVideoModeCocoa(_GLFWmonitor* monitor)
         monitor->ns.previousMode = NULL;
     }
 }
+#else // NEW_APPLE
+void _glfwRestoreVideoModeCocoa(_GLFWmonitor* monitor)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -447,8 +468,12 @@ void _glfwRestoreVideoModeCocoa(_GLFWmonitor* monitor)
 
 void _glfwFreeMonitorCocoa(_GLFWmonitor* monitor)
 {
+#if !NEW_APPLE
+    KFX_DBG("NOT IMPLEMENTED");
+#endif
 }
 
+#if NEW_APPLE
 void _glfwGetMonitorPosCocoa(_GLFWmonitor* monitor, int* xpos, int* ypos)
 {
     @autoreleasepool {
@@ -462,7 +487,18 @@ void _glfwGetMonitorPosCocoa(_GLFWmonitor* monitor, int* xpos, int* ypos)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetMonitorPosCocoa(_GLFWmonitor* monitor, int* xpos, int* ypos)
+{
+    KFX_DBG("NOT IMPLEMENTED - writing [0, 0]");
+    if (xpos)
+        *xpos = 0;
+    if (ypos)
+        *ypos = 0;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetMonitorContentScaleCocoa(_GLFWmonitor* monitor,
                                       float* xscale, float* yscale)
 {
@@ -484,7 +520,19 @@ void _glfwGetMonitorContentScaleCocoa(_GLFWmonitor* monitor,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetMonitorContentScaleCocoa(_GLFWmonitor* monitor,
+                                      float* xscale, float* yscale)
+{
+    KFX_DBG("NOT IMPLEMENTED - writing [1, 1]");
+    if (xscale)
+        *xscale = 1;
+    if (yscale)
+        *yscale = 1;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetMonitorWorkareaCocoa(_GLFWmonitor* monitor,
                                   int* xpos, int* ypos,
                                   int* width, int* height)
@@ -510,7 +558,24 @@ void _glfwGetMonitorWorkareaCocoa(_GLFWmonitor* monitor,
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetMonitorWorkareaCocoa(_GLFWmonitor* monitor,
+                                  int* xpos, int* ypos,
+                                  int* width, int* height)
+{
+    KFX_DBG("NOT IMPLEMENTED - writing [0, 0] [800, 600]");
+    if (xpos)
+        *xpos = 0;
+    if (ypos)
+        *ypos = 0;
+    if (width)
+        *width = 800;
+    if (height)
+        *height = 600;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWvidmode* _glfwGetVideoModesCocoa(_GLFWmonitor* monitor, int* count)
 {
     @autoreleasepool {
@@ -550,7 +615,24 @@ GLFWvidmode* _glfwGetVideoModesCocoa(_GLFWmonitor* monitor, int* count)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWvidmode* _glfwGetVideoModesCocoa(_GLFWmonitor* monitor, int* count)
+{
+    KFX_DBG("NOT IMPLEMENTED - returning 800, 600, 888, 60");
+    GLFWvidmode* result = _glfw_calloc(1, sizeof(GLFWvidmode));
+    result->width = 800;
+    result->height = 600;
+    result->redBits = 8;
+    result->greenBits = 8;
+    result->blueBits = 8;
+    result->refreshRate = 60;
+    if (count)
+        *count = 1;
+    return result;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwGetVideoModeCocoa(_GLFWmonitor* monitor, GLFWvidmode *mode)
 {
     @autoreleasepool {
@@ -561,7 +643,21 @@ void _glfwGetVideoModeCocoa(_GLFWmonitor* monitor, GLFWvidmode *mode)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+void _glfwGetVideoModeCocoa(_GLFWmonitor* monitor, GLFWvidmode *mode)
+{
+    KFX_DBG("NOT IMPLEMENTED - passing output of _glfwGetVideoModesCocoa");
+    if (mode)
+    {
+        int count = 0;
+        GLFWvidmode* modes = _glfwGetVideoModesCocoa(monitor, &count);
+        *mode = modes[0];
+        _glfw_free(modes);
+    }
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 GLFWbool _glfwGetGammaRampCocoa(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 {
     @autoreleasepool {
@@ -590,7 +686,15 @@ GLFWbool _glfwGetGammaRampCocoa(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 
     } // autoreleasepool
 }
+#else // NEW_APPLE
+GLFWbool _glfwGetGammaRampCocoa(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
+{
+    KFX_DBG("NOT IMPLEMENTED returning false");
+    return GLFW_FALSE;
+}
+#endif // NEW_APPLE
 
+#if NEW_APPLE
 void _glfwSetGammaRampCocoa(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
 {
     @autoreleasepool {
@@ -614,17 +718,22 @@ void _glfwSetGammaRampCocoa(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
 
     } // autoreleasepool
 }
-
+#else // NEW_APPLE
+void _glfwSetGammaRampCocoa(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
+{
+    KFX_DBG("NOT IMPLEMENTED");
+}
+#endif // NEW_APPLE
 
 //////////////////////////////////////////////////////////////////////////
 //////                        GLFW native API                       //////
 //////////////////////////////////////////////////////////////////////////
 
+#if NEW_APPLE
 GLFWAPI CGDirectDisplayID glfwGetCocoaMonitor(GLFWmonitor* handle)
 {
     _GLFWmonitor* monitor = (_GLFWmonitor*) handle;
     _GLFW_REQUIRE_INIT_OR_RETURN(kCGNullDirectDisplay);
     return monitor->ns.displayID;
 }
-
 #endif // NEW_APPLE

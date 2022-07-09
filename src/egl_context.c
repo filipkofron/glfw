@@ -717,7 +717,7 @@ GLFWbool _glfwCreateContextEGL(_GLFWwindow* window,
 #elif defined(_GLFW_WIN32)
             "GLESv2.dll",
             "libGLESv2.dll",
-#elif defined(_GLFW_COCOA) && NEW_APPLE
+#elif defined(_GLFW_COCOA)
             "libGLESv2.dylib",
 #elif defined(__CYGWIN__)
             "libGLESv2-2.so",

@@ -29,7 +29,6 @@
 #include <IOKit/hid/IOHIDKeys.h>
 
 #if NEW_APPLE
-
 #define GLFW_COCOA_JOYSTICK_STATE         _GLFWjoystickNS ns;
 #define GLFW_COCOA_LIBRARY_JOYSTICK_STATE
 
@@ -44,11 +43,15 @@ typedef struct _GLFWjoystickNS
     CFMutableArrayRef   buttons;
     CFMutableArrayRef   hats;
 } _GLFWjoystickNS;
+#else
+#define GLFW_COCOA_JOYSTICK_STATE
+#define GLFW_COCOA_LIBRARY_JOYSTICK_STATE
+
+#define GLFW_BUILD_COCOA_MAPPINGS
+#endif // NEW_APPLE
 
 GLFWbool _glfwInitJoysticksCocoa(void);
 void _glfwTerminateJoysticksCocoa(void);
 GLFWbool _glfwPollJoystickCocoa(_GLFWjoystick* js, int mode);
 const char* _glfwGetMappingNameCocoa(void);
 void _glfwUpdateGamepadGUIDCocoa(char* guid);
-
-#endif // NEW_APPLE

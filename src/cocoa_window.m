@@ -1058,7 +1058,11 @@ void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 #else // NEW_APPLE
 void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [0, 0]");
+    if (xpos)
+        *xpos = 0;
+    if (ypos)
+        *ypos = 0;
 }
 #endif // NEW_APPLE
 
@@ -1098,7 +1102,11 @@ void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 #else // NEW_APPLE
 void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
+    if (width)
+        *width = 800;
+    if (height)
+        *height = 600;
 }
 #endif // NEW_APPLE
 
@@ -1194,7 +1202,11 @@ void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 #else // NEW_APPLE
 void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
+    if (width)
+        *width = 800;
+    if (height)
+        *height = 600;
 }
 #endif // NEW_APPLE
 
@@ -1226,7 +1238,15 @@ void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
                                   int* left, int* top,
                                   int* right, int* bottom)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [0, 0] [800, 600]");
+    if (left)
+        *left = 0;
+    if (top)
+        *top = 0;
+    if (right)
+        *right = 800;
+    if (bottom)
+        *bottom = 600;
 }
 #endif // NEW_APPLE
 
@@ -1250,7 +1270,11 @@ void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
 void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
                                      float* xscale, float* yscale)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [1, 1]");
+    if (xscale)
+        *xscale = 1;
+    if (yscale)
+        *yscale = 1;
 }
 #endif // NEW_APPLE
 
@@ -1475,7 +1499,7 @@ GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
 #else // NEW_APPLE
 GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
 {
-    KFX_DBG("NOT IMPLEMENTED");\
+    KFX_DBG("NOT IMPLEMENTED");
     return GLFW_TRUE;
 }
 #endif // NEW_APPLE
@@ -1636,8 +1660,8 @@ float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
 #else // NEW_APPLE
 float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return 0.0f;
+    KFX_DBG("NOT IMPLEMENTED - returning 1");
+    return 1.0f;
 }
 #endif // NEW_APPLE
 
@@ -1785,7 +1809,11 @@ void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
 #else // NEW_APPLE
 void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning [400, 300]");
+    if (xpos)
+        *xpos = 400;
+    if (ypos)
+        *ypos = 300;
 }
 #endif // NEW_APPLE
 
@@ -1899,8 +1927,8 @@ const char* _glfwGetScancodeNameCocoa(int scancode)
 #else // NEW_APPLE
 const char* _glfwGetScancodeNameCocoa(int scancode)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return NULL;
+    KFX_DBG("NOT IMPLEMENTED - returning '0'");
+    return "0";
 }
 #endif // NEW_APPLE
 
@@ -1912,8 +1940,8 @@ int _glfwGetKeyScancodeCocoa(int key)
 #else // NEW_APPLE
 int _glfwGetKeyScancodeCocoa(int key)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return -1;
+    KFX_DBG("NOT IMPLEMENTED returning 0");
+    return 0;
 }
 #endif // NEW_APPLE
 
@@ -1966,8 +1994,8 @@ GLFWbool _glfwCreateCursorCocoa(_GLFWcursor* cursor,
                                 const GLFWimage* image,
                                 int xhot, int yhot)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
+    KFX_DBG("NOT IMPLEMENTED - returning false");
+    return GLFW_FALSE;
 }
 #endif // NEW_APPLE
 
@@ -2048,8 +2076,8 @@ GLFWbool _glfwCreateStandardCursorCocoa(_GLFWcursor* cursor, int shape)
 #else // NEW_APPLE
 GLFWbool _glfwCreateStandardCursorCocoa(_GLFWcursor* cursor, int shape)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
+    KFX_DBG("NOT IMPLEMENTED - returning false");
+    return GLFW_FALSE;
 }
 #endif // NEW_APPLE
 
@@ -2131,8 +2159,8 @@ const char* _glfwGetClipboardStringCocoa(void)
 #else // NEW_APPLE
 const char* _glfwGetClipboardStringCocoa(void)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-    return NULL;
+    KFX_DBG("NOT IMPLEMENTED - returning \"\"");
+    return "";
 }
 #endif // NEW_APPLE
 
@@ -2170,7 +2198,7 @@ EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
 #else // NEW_APPLE
 EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning 0");
     return 0;
 }
 #endif // NEW_APPLE
@@ -2188,7 +2216,7 @@ EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window)
 #else // NEW_APPLE
 EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning NULL");
     return NULL;
 }
 #endif // NEW_APPLE
@@ -2210,7 +2238,7 @@ void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
 #else // NEW_APPLE
 void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - not doing anything");
 }
 #endif // NEW_APPLE
 
@@ -2318,7 +2346,7 @@ VkResult _glfwCreateWindowSurfaceCocoa(VkInstance instance,
                                        const VkAllocationCallbacks* allocator,
                                        VkSurfaceKHR* surface)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning NOT_PRESENT");
     return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 #endif // NEW_APPLE
@@ -2344,7 +2372,7 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
 #else // NEW_APPLE
 GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - returning NULL");
     return NULL;
 }
 #endif // NEW_APPLE
