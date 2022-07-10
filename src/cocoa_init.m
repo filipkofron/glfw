@@ -662,6 +662,8 @@ int _glfwInitCocoa(void)
     KFX_DBG("[NSApplication sharedApplication];");
     [NSApplication sharedApplication];
 
+    _glfwPollMonitorsCocoa();
+
     [pool release];
 
     return GLFW_TRUE;

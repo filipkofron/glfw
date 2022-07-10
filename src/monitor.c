@@ -96,12 +96,16 @@ static GLFWbool refreshVideoModes(_GLFWmonitor* monitor)
 //
 void _glfwInputMonitor(_GLFWmonitor* monitor, int action, int placement)
 {
+    KFX_DBG("Monitor %p, action: %i, placement: %i", monitor, action, placement);
+
     assert(monitor != NULL);
     assert(action == GLFW_CONNECTED || action == GLFW_DISCONNECTED);
     assert(placement == _GLFW_INSERT_FIRST || placement == _GLFW_INSERT_LAST);
 
     if (action == GLFW_CONNECTED)
     {
+        KFX_DBG("Adding monitor %p, action: %i, placement: %i", monitor, action, placement);
+
         _glfw.monitorCount++;
         _glfw.monitors =
             _glfw_realloc(_glfw.monitors,

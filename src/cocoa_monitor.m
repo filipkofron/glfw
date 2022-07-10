@@ -384,7 +384,57 @@ void _glfwPollMonitorsCocoa(void)
 #else // NEW_APPLE
 void _glfwPollMonitorsCocoa(void)
 {
-    KFX_DBG("NOT IMPLEMENTED");
+    KFX_DBG("NOT IMPLEMENTED - partial impl");
+    
+    uint32_t displayCount;
+    CGGetOnlineDisplayList(0, NULL, &displayCount);
+    CGDirectDisplayID* displays = _glfw_calloc(displayCount, sizeof(CGDirectDisplayID));
+    CGGetOnlineDisplayList(displayCount, displays, &displayCount);
+
+    KFX_DBG("Display Count: %u", displayCount);
+
+    for (uint32_t i = 0; i < displayCount;  i++)
+    {
+        if (CGDisplayIsAsleep(displays[i]))
+        {
+            KFX_DBG("Display %u is asleep", i);
+            continue;
+        }
+
+        const uint32_t unitNumber = CGDisplayUnitNumber(displays[i]);
+        NSScreen* screen = nil;
+
+        NSArray* screens = [NSScreen screens];
+
+        for (int si = 0; si < [screens count]; si++)
+        {
+            screen = [screens objectAtIndex: si];
+            NSDictionary *dict = [screen deviceDescription];
+            NSString* str = [[NSString alloc] initWithUTF8String:"NSScreenNumber"];
+            NSNumber* screenNumber = [dict valueForKey: str];
+
+            // HACK: Compare unit numbers instead of display IDs to work around
+            //       display replacement on machines with automatic graphics
+            //       switching
+            if (CGDisplayUnitNumber([screenNumber unsignedIntValue]) == unitNumber)
+                break;
+        }
+
+
+        const CGSize size = CGDisplayScreenSize(displays[i]);
+        //char* name = getMonitorName(displays[i], screen);
+        const char* name = "Main monitor";
+        if (!name)
+            continue;
+
+        _GLFWmonitor* monitor = _glfwAllocMonitor(name, size.width, size.height);
+
+        //_glfw_free(name);
+
+        _glfwInputMonitor(monitor, GLFW_CONNECTED, _GLFW_INSERT_LAST);
+    }
+
+    _glfw_free(displays);
 }
 #endif // NEW_APPLE
 

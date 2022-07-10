@@ -645,6 +645,20 @@ int main( void )
 
    glfwMakeContextCurrent(window);
    gladLoadGL(glfwGetProcAddress);
+
+   printf("All extensions:\n");
+   GLint n=0;
+   glGetIntegerv(GL_NUM_EXTENSIONS, &n); 
+   printf(" - number: %i\n", n);
+   // TODO KFX: Remove
+   for (GLint i=0; i<n; i++) 
+   { 
+      const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+      printf(" - ext %d: %s\n", i, extension); 
+   }
+   const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+   printf("Compatibility mode extensions '%s'", extensions);
+
    glfwSwapInterval( 1 );
 
    glfwGetFramebufferSize(window, &width, &height);
