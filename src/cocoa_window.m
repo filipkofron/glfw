@@ -1093,6 +1093,9 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
         }
     }
 
+    // Nice good old brushed metal look
+    style |= NSTexturedBackgroundWindowMask;
+
     return style;
 }
 
@@ -1549,7 +1552,6 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
         screen);
 
     NSWindow* nswindow = [[GLFWWindow alloc] initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO screen:screen];
-    [nswindow setBackgroundColor:[NSColor greenColor]];
     window->ns.nswindow = nswindow;
 
     /* Create a default view for this window */
@@ -1594,9 +1596,8 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     KFX_DBG("setAcceptsMouseMovedEvents");
     [nswindow setAcceptsMouseMovedEvents:YES];
 
-    //[nswindow setRestorable:NO];
-
-    [nswindow setBackgroundColor:[NSColor redColor]];
+    // Not on tiger (at min)
+    // [nswindow setRestorable:NO];
 
 
 
