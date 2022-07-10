@@ -1019,7 +1019,8 @@ float _glfwTransformYCocoa(float y)
 
 @end
 
-@interface GLFWView : NSView
+//@interface GLFWView : NSOpenGLView
+@interface GLFWView : NSOpenGLView
 
 /* The default implementation doesn't pass rightMouseDown to responder chain */
 - (void)rightMouseDown:(NSEvent *)theEvent;
@@ -1113,6 +1114,20 @@ static int MakeCurrentGLContext(GLFWOpenGLContext* context)
     return 0;
 }
 
+static void makeContextCurrentNSGL(_GLFWwindow* window)
+{
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    if (window)
+        [window->context.nsgl.object makeCurrentContext];
+    else
+        [NSOpenGLContext clearCurrentContext];
+
+    _glfwPlatformSetTls(&_glfw.contextSlot, window);
+
+    [pool release];
+}
+
 static GLFWglproc getProcAddressNSGL(const char* procname)
 {
     CFStringRef symbolName = CFStringCreateWithCString(kCFAllocatorDefault,
@@ -1156,6 +1171,7 @@ static void swapBuffersNSGL(_GLFWwindow* window)
     //     }
     // }
 
+    KFX_DBG("flush buffer");
     [window->context.nsgl.object flushBuffer];
 
     [pool release];
@@ -1175,8 +1191,16 @@ static void swapIntervalNSGL(int interval)
     [pool release];
 }
 
+static int extensionSupportedNSGL(const char* extension)
+{
+    // There are no NSGL extensions
+    return GLFW_FALSE;
+}
 
-static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow* window)
+static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display,
+                                _GLFWwindow* window,
+                                const _GLFWctxconfig* ctxconfig,
+                                const _GLFWfbconfig* fbconfig)
 {
     KFX_DBG("Many missing coeffs");
     // SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
@@ -1184,17 +1208,16 @@ static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow
     // SDL_DisplayData *displaydata = (SDL_DisplayData *)display->driverdata;
     NSOpenGLPixelFormatAttribute attr[32];
     NSOpenGLPixelFormat *fmt = NULL;
-    int i = 0;
     const char *glversion = NULL;
     int glversion_major;
     int glversion_minor;
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    attr[i++] = NSOpenGLPFAColorSize;
+    //attr[i++] = NSOpenGLPFAColorSize;
     //attr[i++] = SDL_BYTESPERPIXEL(display->current_mode.format)*8;
 
-    attr[i++] = NSOpenGLPFADepthSize;
+    //attr[i++] = NSOpenGLPFADepthSize;
     // attr[i++] = _this->gl_config.depth_size;
 
     // if (_this->gl_config.double_buffer) {
@@ -1238,9 +1261,103 @@ static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow
     //     }
     // }
 
-    attr[i++] = NSOpenGLPFAScreenMask;
-    attr[i++] = CGDisplayIDToOpenGLDisplayMask(display);
-    attr[i] = 0;
+#define ADD_ATTRIB(a) \
+{ \
+    assert((size_t) index < sizeof(attribs) / sizeof(attr[0])); \
+    attr[index++] = a; \
+}
+#define SET_ATTRIB(a, v) { ADD_ATTRIB(a); ADD_ATTRIB(v); }
+
+    NSOpenGLPixelFormatAttribute attribs[40];
+    int index = 0;
+
+    ADD_ATTRIB(NSOpenGLPFAAccelerated);
+    ADD_ATTRIB(NSOpenGLPFAClosestPolicy);
+
+    if (ctxconfig->major <= 2)
+    {
+        if (fbconfig->auxBuffers != GLFW_DONT_CARE)
+            SET_ATTRIB(NSOpenGLPFAAuxBuffers, fbconfig->auxBuffers);
+
+        if (fbconfig->accumRedBits != GLFW_DONT_CARE &&
+            fbconfig->accumGreenBits != GLFW_DONT_CARE &&
+            fbconfig->accumBlueBits != GLFW_DONT_CARE &&
+            fbconfig->accumAlphaBits != GLFW_DONT_CARE)
+        {
+            const int accumBits = fbconfig->accumRedBits +
+                                  fbconfig->accumGreenBits +
+                                  fbconfig->accumBlueBits +
+                                  fbconfig->accumAlphaBits;
+
+            SET_ATTRIB(NSOpenGLPFAAccumSize, accumBits);
+        }
+    }
+
+    if (fbconfig->redBits != GLFW_DONT_CARE &&
+        fbconfig->greenBits != GLFW_DONT_CARE &&
+        fbconfig->blueBits != GLFW_DONT_CARE)
+    {
+        int colorBits = fbconfig->redBits +
+                        fbconfig->greenBits +
+                        fbconfig->blueBits;
+
+        // macOS needs non-zero color size, so set reasonable values
+        if (colorBits == 0)
+            colorBits = 24;
+        else if (colorBits < 15)
+            colorBits = 15;
+
+        SET_ATTRIB(NSOpenGLPFAColorSize, colorBits);
+    }
+
+    if (fbconfig->alphaBits != GLFW_DONT_CARE)
+        SET_ATTRIB(NSOpenGLPFAAlphaSize, fbconfig->alphaBits);
+
+    if (fbconfig->depthBits != GLFW_DONT_CARE)
+        SET_ATTRIB(NSOpenGLPFADepthSize, fbconfig->depthBits);
+
+    if (fbconfig->stencilBits != GLFW_DONT_CARE)
+        SET_ATTRIB(NSOpenGLPFAStencilSize, fbconfig->stencilBits);
+
+    if (fbconfig->stereo)
+    {
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200
+        _glfwInputError(GLFW_FORMAT_UNAVAILABLE,
+                        "NSGL: Stereo rendering is deprecated");
+        return GLFW_FALSE;
+#else
+        ADD_ATTRIB(NSOpenGLPFAStereo);
+#endif
+    }
+
+    if (fbconfig->doublebuffer)
+        ADD_ATTRIB(NSOpenGLPFADoubleBuffer);
+
+    if (fbconfig->samples != GLFW_DONT_CARE)
+    {
+        if (fbconfig->samples == 0)
+        {
+            SET_ATTRIB(NSOpenGLPFASampleBuffers, 0);
+        }
+        else
+        {
+            SET_ATTRIB(NSOpenGLPFASampleBuffers, 1);
+            SET_ATTRIB(NSOpenGLPFASamples, fbconfig->samples);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    SET_ATTRIB(NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(display));
+    ADD_ATTRIB(0);
 
     fmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
     if (fmt == nil) {
@@ -1266,6 +1383,7 @@ static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow
 
     [pool release];
 
+    // KFX TODO: Isn't this supposed to happen later?
     if (MakeCurrentGLContext(context) < 0 ) {
         [context release];
         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed making OpenGL context current");
@@ -1313,10 +1431,10 @@ static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display, _GLFWwindow
     //     /*_this->gl_config.minor_version = glversion_minor;*/
     // }
 
-    // window->context.makeCurrent = makeContextCurrentNSGL;
+    window->context.makeCurrent = makeContextCurrentNSGL;
     window->context.swapBuffers = swapBuffersNSGL;
     window->context.swapInterval = swapIntervalNSGL;
-    // window->context.extensionSupported = extensionSupportedNSGL;
+    window->context.extensionSupported = extensionSupportedNSGL;
     window->context.getProcAddress = getProcAddressNSGL;
     // window->context.destroy = destroyContextNSGL;
 
@@ -1431,10 +1549,17 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
         screen);
 
     NSWindow* nswindow = [[GLFWWindow alloc] initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO screen:screen];
+    [nswindow setBackgroundColor:[NSColor greenColor]];
     window->ns.nswindow = nswindow;
 
     /* Create a default view for this window */
     rect = [nswindow contentRectForFrameRect:[nswindow frame]];
+    KFX_DBG("contentRectForFrameRect: [%lf, %lf, %lf, %lf]",
+    rect.origin.x,
+    rect.origin.y,
+    rect.size.width,
+    rect.size.height);
+
     NSView* contentView = [[GLFWView alloc] initWithFrame:rect];
 
     // if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
@@ -1443,6 +1568,7 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     //     }
     // }
 
+    KFX_DBG("setContentView: ");
     [nswindow setContentView: contentView];
     /* Prevents the window's "window device" from being destroyed when it is
      * hidden. See http://www.mikeash.com/pyblog/nsopenglcontext-and-one-shot.html
@@ -1451,6 +1577,8 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     [nswindow setOneShot:NO];
 
 
+    KFX_DBG("orderFront");
+    [nswindow orderFront: nil];
     // Show window
     KFX_DBG("makeKeyAndOrderFront");
     [nswindow makeKeyAndOrderFront:nil];
@@ -1459,34 +1587,65 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     [nswindow makeFirstResponder:contentView];
     //[nswindow setTitle:wndconfig->title];
     //[nswindow setDelegate:window->ns.delegate];
+
+    KFX_DBG("setDelegate: NSResponder alloc");
+    [nswindow setDelegate: [[NSResponder alloc] init]];
+
     KFX_DBG("setAcceptsMouseMovedEvents");
     [nswindow setAcceptsMouseMovedEvents:YES];
 
     //[nswindow setRestorable:NO];
 
+    [nswindow setBackgroundColor:[NSColor redColor]];
+
+
+
+
+    if (ctxconfig->client != GLFW_NO_API)
+    {
+        if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
+        {
+                uint32_t displayCount = 0;
+                CGGetOnlineDisplayList(0, NULL, &displayCount);
+                KFX_DBG("CGGetOnlineDisplayList count: %i", displayCount);
+                CGDirectDisplayID* displays = _glfw_calloc(displayCount, sizeof(CGDirectDisplayID));
+                CGGetOnlineDisplayList(displayCount, displays, &displayCount);
+
+                KFX_DBG("TODO: Taking the first display, use CGDisplayIsMain(displays[i]), skip CGDisplayMirrorsDisplay");
+                GLFWOpenGLContext* context = CreateGLContext(displays[0], window, ctxconfig, fbconfig);
+                window->context.nsgl.object = context;
+                [context setView: contentView];
+
+                KFX_DBG("context: %p", context);
+
+                KFX_DBG("_glfwPlatformSetTls: %p", window);
+                _glfwPlatformSetTls(&_glfw.contextSlot, window);
+
+                _glfw_free(displays);
+        }
+        else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
+        {
+            if (!_glfwInitOSMesa())
+                return GLFW_FALSE;
+            if (!_glfwCreateContextOSMesa(window, ctxconfig, fbconfig))
+                return GLFW_FALSE;
+        }
+        else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
+        {
+            _glfwInputError(GLFW_PLATFORM_ERROR, "EGL context unsupported on this platform.");
+        }
+
+        if (!_glfwRefreshContextAttribs(window, ctxconfig))
+            return GLFW_FALSE;
+    }
+
+
+
+
+
+
+
     [contentView release];
-
-
-    uint32_t displayCount = 0;
-    CGGetOnlineDisplayList(0, NULL, &displayCount);
-    KFX_DBG("CGGetOnlineDisplayList count: %i", displayCount);
-    CGDirectDisplayID* displays = _glfw_calloc(displayCount, sizeof(CGDirectDisplayID));
-    CGGetOnlineDisplayList(displayCount, displays, &displayCount);
-
-    KFX_DBG("TODO: Taking the first display, use CGDisplayIsMain(displays[i]), skip CGDisplayMirrorsDisplay");
-    GLFWOpenGLContext* context = CreateGLContext(displays[0], window);
-    window->context.nsgl.object = context;
-
-    KFX_DBG("context: %p", context);
-
-    KFX_DBG("_glfwPlatformSetTls: %p", window);
-    _glfwPlatformSetTls(&_glfw.contextSlot, window);
-
-    _glfw_free(displays);
-
-
-
-
     [pool release];
 
     return GLFW_TRUE;
@@ -2232,7 +2391,6 @@ void _glfwPollEventsCocoa(void)
 #else // NEW_APPLE
 void _glfwPollEventsCocoa(void)
 {
-    KFX_DBG("IS THIS CORRECT?");
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
     // /* Update activity every 30 seconds to prevent screensaver */

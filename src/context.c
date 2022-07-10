@@ -340,6 +340,8 @@ const _GLFWfbconfig* _glfwChooseFBConfig(const _GLFWfbconfig* desired,
 GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
                                     const _GLFWctxconfig* ctxconfig)
 {
+    KFX_DBG("Start");
+
     int i;
     _GLFWwindow* previous;
     const char* version;
@@ -354,21 +356,30 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
     window->context.source = ctxconfig->source;
     window->context.client = GLFW_OPENGL_API;
 
+    KFX_DBG("_glfwPlatformGetTls");
     previous = _glfwPlatformGetTls(&_glfw.contextSlot);
+
+    KFX_DBG("glfwMakeContextCurrent");
     glfwMakeContextCurrent((GLFWwindow*) window);
 
+    KFX_DBG("To load GetIntegerv and GetString");
     window->context.GetIntegerv = (PFNGLGETINTEGERVPROC)
         window->context.getProcAddress("glGetIntegerv");
     window->context.GetString = (PFNGLGETSTRINGPROC)
         window->context.getProcAddress("glGetString");
+
+    KFX_DBG("Loaded GetIntegerv: %p and GetString: %p", window->context.GetIntegerv, window->context.GetString);
     if (!window->context.GetIntegerv || !window->context.GetString)
     {
+        KFX_DBG("missing  GetIntegerv: %p or GetString: %p", window->context.GetIntegerv, window->context.GetString);
         _glfwInputError(GLFW_PLATFORM_ERROR, "Entry point retrieval is broken");
         glfwMakeContextCurrent((GLFWwindow*) previous);
         return GLFW_FALSE;
     }
+    KFX_DBG("GetString(GL_VERSION)");
 
     version = (const char*) window->context.GetString(GL_VERSION);
+    KFX_DBG("GetString(GL_VERSION): '%s'", version);
     if (!version)
     {
         if (ctxconfig->client == GLFW_OPENGL_API)
@@ -386,6 +397,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         return GLFW_FALSE;
     }
 
+    KFX_DBG("Check for OpenGL ES prefix");
+
     for (i = 0;  prefixes[i];  i++)
     {
         const size_t length = strlen(prefixes[i]);
@@ -397,6 +410,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
             break;
         }
     }
+
+    KFX_DBG("Parse OpenGL version");
 
     if (!sscanf(version, "%d.%d.%d",
                 &window->context.major,
@@ -417,6 +432,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         glfwMakeContextCurrent((GLFWwindow*) previous);
         return GLFW_FALSE;
     }
+
+    KFX_DBG("Check required OpenGL version");
 
     if (window->context.major < ctxconfig->major ||
         (window->context.major == ctxconfig->major &&
@@ -444,12 +461,16 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
                             window->context.major, window->context.minor);
         }
 
+        KFX_DBG("Unsuitable OpenGL version");
+
         glfwMakeContextCurrent((GLFWwindow*) previous);
         return GLFW_FALSE;
     }
 
     if (window->context.major >= 3)
     {
+        KFX_DBG("Cache OpenGL 3.0 extension function");
+
         // OpenGL 3.0+ uses a different function for extension string retrieval
         // We cache it here instead of in glfwExtensionSupported mostly to alert
         // users as early as possible that their build may be broken
@@ -465,11 +486,14 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         }
     }
 
+    KFX_DBG("Check context and extensions");
+
     if (window->context.client == GLFW_OPENGL_API)
     {
         // Read back context flags (OpenGL 3.0 and above)
         if (window->context.major >= 3)
         {
+            KFX_DBG("Read back context flags (OpenGL 3.0 and above)");
             GLint flags;
             window->context.GetIntegerv(GL_CONTEXT_FLAGS, &flags);
 
@@ -491,6 +515,7 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
                 window->context.noerror = GLFW_TRUE;
         }
 
+        KFX_DBG("Read back OpenGL context profile (OpenGL 3.2 and above)");
         // Read back OpenGL context profile (OpenGL 3.2 and above)
         if (window->context.major >= 4 ||
             (window->context.major == 3 && window->context.minor >= 2))
@@ -512,6 +537,7 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
             }
         }
 
+        KFX_DBG("glfwExtensionSupported(\"GL_ARB_robustness\")");
         // Read back robustness strategy
         if (glfwExtensionSupported("GL_ARB_robustness"))
         {
@@ -547,6 +573,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         }
     }
 
+    KFX_DBG("9");
+
     if (glfwExtensionSupported("GL_KHR_context_flush_control"))
     {
         GLint behavior;
@@ -558,6 +586,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
             window->context.release = GLFW_RELEASE_BEHAVIOR_FLUSH;
     }
 
+    KFX_DBG("10");
+
     // Clearing the front buffer to black to avoid garbage pixels left over from
     // previous uses of our bit of VRAM
     {
@@ -568,6 +598,8 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         if (window->doublebuffer)
             window->context.swapBuffers(window);
     }
+
+    KFX_DBG("11");
 
     glfwMakeContextCurrent((GLFWwindow*) previous);
     return GLFW_TRUE;
@@ -608,12 +640,17 @@ GLFWbool _glfwStringInExtensionString(const char* string, const char* extensions
 
 GLFWAPI void glfwMakeContextCurrent(GLFWwindow* handle)
 {
+    KFX_DBG("Make context current");
     _GLFWwindow* window = (_GLFWwindow*) handle;
     _GLFWwindow* previous;
 
     _GLFW_REQUIRE_INIT();
 
+    KFX_DBG("After init");
+
     previous = _glfwPlatformGetTls(&_glfw.contextSlot);
+
+    KFX_DBG("with previous: %p", previous);
 
     if (window && window->context.client == GLFW_NO_API)
     {
@@ -622,11 +659,15 @@ GLFWAPI void glfwMakeContextCurrent(GLFWwindow* handle)
         return;
     }
 
+    KFX_DBG("unset previous");
+
     if (previous)
     {
         if (!window || window->context.source != previous->context.source)
             previous->context.makeCurrent(NULL);
     }
+
+    KFX_DBG("make current");
 
     if (window)
         window->context.makeCurrent(window);
@@ -647,6 +688,7 @@ GLFWAPI void glfwSwapBuffers(GLFWwindow* handle)
 
     if (window->context.client == GLFW_NO_API)
     {
+        KFX_DBG("Error: GLFW_NO_API");
         _glfwInputError(GLFW_NO_WINDOW_CONTEXT,
                         "Cannot swap buffers of a window that has no OpenGL or OpenGL ES context");
         return;
@@ -743,12 +785,9 @@ GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
     _GLFWwindow* window;
     assert(procname != NULL);
 
-    KFX_DBG("Proc: '%s'", procname);
-
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
 
     window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    KFX_DBG(" - window: %p", window);
     if (!window)
     {
         _glfwInputError(GLFW_NO_CURRENT_CONTEXT,
@@ -756,11 +795,9 @@ GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
         return NULL;
     }
 
-    KFX_DBG(" - window->context: %p", window->context);
-
     GLFWglproc proc = window->context.getProcAddress(procname);
 
-    KFX_DBG(" - '%s' loaded: %p", procname, proc);
+    //KFX_DBG("[%s] %p", procname, proc);
 
     return proc;
 }
