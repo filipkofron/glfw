@@ -615,7 +615,6 @@ void DrawGrid( void )
    return;
 }
 
-
 /*======================================================================*
  * main()
  *======================================================================*/
@@ -644,6 +643,31 @@ int main( void )
 
    glfwMakeContextCurrent(window);
    gladLoadGL(glfwGetProcAddress);
+
+   printf("All extensions:\n");
+   GLint n=0;
+   glGetIntegerv(GL_NUM_EXTENSIONS, &n); 
+   printf(" - number: %i\n", n);
+   // TODO KFX: Remove
+   for (GLint i=0; i<n; i++) 
+   { 
+      const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+      printf(" - ext %d: %s\n", i, extension); 
+   }
+   char* extensions = strdup((const char*)glGetString(GL_EXTENSIONS));
+   int iii = 0;
+   while (extensions[iii] != '\0')
+   {
+      if (extensions[iii] == ' ')
+         extensions[iii] = '\n';
+
+      iii++;
+   }
+   free(extensions);
+   extensions = NULL;
+   
+   printf("Compatibility mode extensions '%s'\n", extensions);
+
    glfwSwapInterval( 1 );
 
    glfwGetFramebufferSize(window, &width, &height);

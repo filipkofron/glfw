@@ -250,6 +250,12 @@ void _glfwInputError(int code, const char* format, ...)
 //////                        GLFW public API                       //////
 //////////////////////////////////////////////////////////////////////////
 
+void GLFWerrorfunImpl(int error_code, const char* description)
+{
+    printf("Error: %i - %s\n", error_code, description);
+    fflush(stdout);
+}
+
 GLFWAPI int glfwInit(void)
 {
     if (_glfw.initialized)
@@ -257,6 +263,8 @@ GLFWAPI int glfwInit(void)
 
     memset(&_glfw, 0, sizeof(_glfw));
     _glfw.hints.init = _glfwInitHints;
+
+    glfwSetErrorCallback(GLFWerrorfunImpl);
 
     if (!_glfwPlatformInit())
     {
@@ -280,6 +288,7 @@ GLFWAPI int glfwInit(void)
     _glfw.timer.offset = _glfwPlatformGetTimerValue();
 
     glfwDefaultWindowHints();
+    glfwSetErrorCallback(GLFWerrorfunImpl);
     return GLFW_TRUE;
 }
 

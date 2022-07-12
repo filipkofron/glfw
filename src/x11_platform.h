@@ -45,7 +45,13 @@
 #include <X11/extensions/Xinerama.h>
 
 // The XInput extension provides raw mouse motion input
+#if NEW_XSERVER
 #include <X11/extensions/XInput2.h>
+#else
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XInput.h>
+#include <X11/extensions/Xrender.h>
+#endif
 
 typedef XRRCrtcGamma* (* PFN_XRRAllocGamma)(int);
 typedef void (* PFN_XRRFreeCrtcInfo)(XRRCrtcInfo*);
@@ -112,7 +118,11 @@ typedef Bool (* PFN_XF86VidModeGetGammaRampSize)(Display*,int,int*);
 #define XF86VidModeGetGammaRampSize _glfw.x11.vidmode.GetGammaRampSize
 
 typedef Status (* PFN_XIQueryVersion)(Display*,int*,int*);
+#if NEW_XSERVER
 typedef int (* PFN_XISelectEvents)(Display*,Window,XIEventMask*,int);
+#else
+typedef int (* PFN_XSelectExtensionEvent)(Display*,Window,XEventClass*,int);
+#endif
 #define XIQueryVersion _glfw.x11.xi.QueryVersion
 #define XISelectEvents _glfw.x11.xi.SelectEvents
 
@@ -391,7 +401,11 @@ typedef struct _GLFWlibraryX11
         int         major;
         int         minor;
         PFN_XIQueryVersion QueryVersion;
+#if NEW_XSERVER
         PFN_XISelectEvents SelectEvents;
+#else
+        PFN_XSelectExtensionEvent SelectEvents;
+#endif
     } xi;
 
     struct {

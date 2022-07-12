@@ -269,8 +269,12 @@ static int compareJoysticks(const void* fp, const void* sp)
 GLFWbool _glfwInitJoysticksLinux(void)
 {
     const char* dirname = "/dev/input";
-
+#if NEW_LINUX
     _glfw.linjs.inotify = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+#else // NEW_LINUX
+    //_glfw.linjs.inotify = inotify_init();
+    _glfw.linjs.inotify = 0;
+#endif //NEW_LINUX
     if (_glfw.linjs.inotify > 0)
     {
         // HACK: Register for IN_ATTRIB to get notified when udev is done

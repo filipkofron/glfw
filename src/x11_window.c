@@ -574,6 +574,7 @@ static void updateCursorImage(_GLFWwindow* window)
     }
 }
 
+#if NEW_XSERVER
 // Enable XI2 raw mouse motion events
 //
 static void enableRawMouseMotion(_GLFWwindow* window)
@@ -602,13 +603,16 @@ static void disableRawMouseMotion(_GLFWwindow* window)
 
     XISelectEvents(_glfw.x11.display, _glfw.x11.root, &em, 1);
 }
+#endif // NEW_XSERVER
 
 // Apply disabled cursor mode to a focused window
 //
 static void disableCursor(_GLFWwindow* window)
 {
+#if NEW_XSERVER
     if (window->rawMouseMotion)
         enableRawMouseMotion(window);
+#endif
 
     _glfw.x11.disabledCursorWindow = window;
     _glfwPlatformGetCursorPos(window,
@@ -628,8 +632,10 @@ static void disableCursor(_GLFWwindow* window)
 //
 static void enableCursor(_GLFWwindow* window)
 {
+#if NEW_XSERVER
     if (window->rawMouseMotion)
         disableRawMouseMotion(window);
+#endif
 
     _glfw.x11.disabledCursorWindow = NULL;
     XUngrabPointer(_glfw.x11.display, CurrentTime);
@@ -1249,6 +1255,7 @@ static void processEvent(XEvent *event)
         }
     }
 
+#if NEW_XSERVER
     if (event->type == GenericEvent)
     {
         if (_glfw.x11.xi.available)
@@ -1286,6 +1293,7 @@ static void processEvent(XEvent *event)
 
         return;
     }
+#endif // NEW_XSERVER
 
     if (event->type == SelectionClear)
     {
@@ -2032,6 +2040,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
                               const _GLFWctxconfig* ctxconfig,
                               const _GLFWfbconfig* fbconfig)
 {
+    printf("[KFX] _glfwPlatformCreateWindow():\n");
     Visual* visual = NULL;
     int depth;
 
@@ -2039,13 +2048,17 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
     {
         if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
         {
+            printf("[KFX] - _glfwInitGLX()\n");
             if (!_glfwInitGLX())
                 return GLFW_FALSE;
+
+            printf("[KFX] - _glfwChooseVisualGLX()\n");
             if (!_glfwChooseVisualGLX(wndconfig, ctxconfig, fbconfig, &visual, &depth))
                 return GLFW_FALSE;
         }
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
+            printf("[KFX] - _glfwInitEGL()\n");
             if (!_glfwInitEGL())
                 return GLFW_FALSE;
             if (!_glfwChooseVisualEGL(wndconfig, ctxconfig, fbconfig, &visual, &depth))
@@ -2053,6 +2066,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         }
         else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
         {
+            printf("[KFX] - _glfwInitOSMesa()\n");
             if (!_glfwInitOSMesa())
                 return GLFW_FALSE;
         }
@@ -2060,27 +2074,34 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
 
     if (!visual)
     {
+        printf("[KFX] - DefaultVisual()\n");
         visual = DefaultVisual(_glfw.x11.display, _glfw.x11.screen);
+        printf("[KFX] - DefaultDepth()\n");
         depth = DefaultDepth(_glfw.x11.display, _glfw.x11.screen);
     }
 
+    printf("[KFX] - createNativeWindow()\n");
     if (!createNativeWindow(window, wndconfig, visual, depth))
         return GLFW_FALSE;
 
+//    ((_GLFWctxconfig*)ctxconfig)->client = GLFW_NO_API;
     if (ctxconfig->client != GLFW_NO_API)
     {
         if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
         {
+            printf("[KFX] - _glfwCreateContextGLX()\n");
             if (!_glfwCreateContextGLX(window, ctxconfig, fbconfig))
                 return GLFW_FALSE;
         }
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
+            printf("[KFX] - _glfwCreateContextEGL()\n");
             if (!_glfwCreateContextEGL(window, ctxconfig, fbconfig))
                 return GLFW_FALSE;
         }
         else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
         {
+            printf("[KFX] - _glfwCreateContextOSMesa()\n");
             if (!_glfwCreateContextOSMesa(window, ctxconfig, fbconfig))
                 return GLFW_FALSE;
         }
@@ -2088,8 +2109,11 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
 
     if (window->monitor)
     {
+        printf("[KFX] - _glfwPlatformShowWindow()\n");
         _glfwPlatformShowWindow(window);
+        printf("[KFX] - updateWindowMode()\n");
         updateWindowMode(window);
+        printf("[KFX] - acquireMonitor()\n");
         acquireMonitor(window);
     }
 
@@ -2815,10 +2839,12 @@ void _glfwPlatformSetRawMouseMotion(_GLFWwindow *window, GLFWbool enabled)
     if (_glfw.x11.disabledCursorWindow != window)
         return;
 
+#if NEW_XSERVER
     if (enabled)
         enableRawMouseMotion(window);
     else
         disableRawMouseMotion(window);
+#endif
 }
 
 GLFWbool _glfwPlatformRawMouseMotionSupported(void)

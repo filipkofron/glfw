@@ -40,18 +40,25 @@
 
 // Returns the specified attribute of the specified GLXFBConfig
 //
-static int getGLXFBConfigAttrib(GLXFBConfig fbconfig, int attrib)
+
+static int getGLXFBConfigAttribHelper(GLXFBConfig fbconfig, int attrib, char* name)
 {
     int value;
     glXGetFBConfigAttrib(_glfw.x11.display, fbconfig, attrib, &value);
+    printf("[KFX] - - getGLXFBConfigAttrib(%s): %i\n", name, value);
     return value;
 }
+
+#define getGLXFBConfigAttrib(fbconfig, attrib) \
+    getGLXFBConfigAttribHelper(fbconfig, attrib, #attrib)
 
 // Return the GLXFBConfig most closely matching the specified hints
 //
 static GLFWbool chooseGLXFBConfig(const _GLFWfbconfig* desired,
                                   GLXFBConfig* result)
 {
+    printf("[KFX] chooseGLXFBConfig():\n");
+
     GLXFBConfig* nativeConfigs;
     _GLFWfbconfig* usableConfigs;
     const _GLFWfbconfig* closest;
@@ -62,11 +69,15 @@ static GLFWbool chooseGLXFBConfig(const _GLFWfbconfig* desired,
     // HACK: This is a (hopefully temporary) workaround for Chromium
     //       (VirtualBox GL) not setting the window bit on any GLXFBConfigs
     vendor = glXGetClientString(_glfw.x11.display, GLX_VENDOR);
+    printf("[KFX] - glXGetClientString(_glfw.x11.display, GLX_VENDOR): %s\n", vendor);
+    
     if (vendor && strcmp(vendor, "Chromium") == 0)
         trustWindowBit = GLFW_FALSE;
 
+    printf("[KFX] - glXGetFBConfigs()\n");
     nativeConfigs =
         glXGetFBConfigs(_glfw.x11.display, _glfw.x11.screen, &nativeCount);
+    printf("[KFX] - nativeCount(): %i\n", nativeCount);
     if (!nativeConfigs || !nativeCount)
     {
         _glfwInputError(GLFW_API_UNAVAILABLE, "GLX: No GLXFBConfigs returned");
@@ -80,6 +91,8 @@ static GLFWbool chooseGLXFBConfig(const _GLFWfbconfig* desired,
     {
         const GLXFBConfig n = nativeConfigs[i];
         _GLFWfbconfig* u = usableConfigs + usableCount;
+
+        printf("[KFX] - [i]: %i\n", i);
 
         // Only consider RGBA GLXFBConfigs
         if (!(getGLXFBConfigAttrib(n, GLX_RENDER_TYPE) & GLX_RGBA_BIT))
@@ -253,6 +266,7 @@ static void destroyContextGLX(_GLFWwindow* window)
 //
 GLFWbool _glfwInitGLX(void)
 {
+    printf("[KFX] _glfwInitGLX():\n");
     int i;
     const char* sonames[] =
     {
@@ -352,12 +366,14 @@ GLFWbool _glfwInitGLX(void)
         return GLFW_FALSE;
     }
 
+#if NEW_XSERVER
     if (_glfw.glx.major == 1 && _glfw.glx.minor < 3)
     {
         _glfwInputError(GLFW_API_UNAVAILABLE,
                         "GLX: GLX version 1.3 is required");
         return GLFW_FALSE;
     }
+#endif
 
     if (extensionSupportedGLX("GLX_EXT_swap_control"))
     {
@@ -438,6 +454,7 @@ void _glfwTerminateGLX(void)
 
 #define setAttrib(a, v) \
 { \
+    printf("[KFX] setAttrib(%s, %s)\n", #a, #v);\
     assert(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
     attribs[index++] = v; \
@@ -449,6 +466,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
                                const _GLFWctxconfig* ctxconfig,
                                const _GLFWfbconfig* fbconfig)
 {
+    printf("[KFX] _glfwCreateContextGLX():\n");
     int attribs[40];
     GLXFBConfig native = NULL;
     GLXContext share = NULL;
@@ -456,6 +474,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
     if (ctxconfig->share)
         share = ctxconfig->share->context.glx.handle;
 
+    printf("[KFX] - chooseGLXFBConfig()\n");
     if (!chooseGLXFBConfig(fbconfig, &native))
     {
         _glfwInputError(GLFW_FORMAT_UNAVAILABLE,
@@ -463,6 +482,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
         return GLFW_FALSE;
     }
 
+    printf("[KFX] - ctxconfig->client == GLFW_OPENGL_ES_API()\n");
     if (ctxconfig->client == GLFW_OPENGL_ES_API)
     {
         if (!_glfw.glx.ARB_create_context ||
@@ -475,6 +495,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
         }
     }
 
+    printf("[KFX] - ctxconfig->forward\n");
     if (ctxconfig->forward)
     {
         if (!_glfw.glx.ARB_create_context)
@@ -485,6 +506,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
         }
     }
 
+    printf("[KFX] - ctxconfig->profile\n");
     if (ctxconfig->profile)
     {
         if (!_glfw.glx.ARB_create_context ||
@@ -496,6 +518,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
         }
     }
 
+    printf("[KFX] - _glfwGrabErrorHandlerX11\n");
     _glfwGrabErrorHandlerX11();
 
     if (_glfw.glx.ARB_create_context)
@@ -577,6 +600,7 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
 
         setAttrib(None, None);
 
+        printf("[KFX] - CreateContextAttribsARB\n");
         window->context.glx.handle =
             _glfw.glx.CreateContextAttribsARB(_glfw.x11.display,
                                               native,
@@ -602,25 +626,34 @@ GLFWbool _glfwCreateContextGLX(_GLFWwindow* window,
     }
     else
     {
+        printf("[KFX] - createLegacyContextGLX\n");
         window->context.glx.handle =
             createLegacyContextGLX(window, native, share);
     }
 
+    printf("[KFX] - _glfwReleaseErrorHandlerX11\n");
     _glfwReleaseErrorHandlerX11();
 
+    printf("[KFX] - window->context.glx.handle\n");
     if (!window->context.glx.handle)
     {
         _glfwInputErrorX11(GLFW_VERSION_UNAVAILABLE, "GLX: Failed to create context");
         return GLFW_FALSE;
     }
 
-    window->context.glx.window =
-        glXCreateWindow(_glfw.x11.display, native, window->x11.handle, NULL);
+    printf("[KFX] - glXCreateWindow HAX\n");
+    window->context.glx.window = window->x11.handle;
+    /*window->context.glx.window =
+        glXCreateWindow(_glfw.x11.display, native, window->x11.handle, NULL);*/
+
+    printf("[KFX] - ?window->context.glx.windown\n");
     if (!window->context.glx.window)
     {
+        printf("[KFX] - !window->context.glx.windown\n");
         _glfwInputError(GLFW_PLATFORM_ERROR, "GLX: Failed to create window");
         return GLFW_FALSE;
     }
+    printf("[KFX] - window->context.glx.windown\n");
 
     window->context.makeCurrent = makeContextCurrentGLX;
     window->context.swapBuffers = swapBuffersGLX;

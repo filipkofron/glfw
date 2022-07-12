@@ -604,8 +604,8 @@ static GLFWbool initExtensions(void)
     {
         _glfw.x11.xi.QueryVersion = (PFN_XIQueryVersion)
             _glfw_dlsym(_glfw.x11.xi.handle, "XIQueryVersion");
-        _glfw.x11.xi.SelectEvents = (PFN_XISelectEvents)
-            _glfw_dlsym(_glfw.x11.xi.handle, "XISelectEvents");
+        _glfw.x11.xi.SelectEvents = (PFN_XSelectExtensionEvent)
+            _glfw_dlsym(_glfw.x11.xi.handle, "XSelectExtensionEvent");
 
         if (XQueryExtension(_glfw.x11.display,
                             "XInputExtension",
@@ -616,12 +616,14 @@ static GLFWbool initExtensions(void)
             _glfw.x11.xi.major = 2;
             _glfw.x11.xi.minor = 0;
 
+#if NEW_XSERVER
             if (XIQueryVersion(_glfw.x11.display,
                                &_glfw.x11.xi.major,
                                &_glfw.x11.xi.minor) == Success)
             {
                 _glfw.x11.xi.available = GLFW_TRUE;
             }
+#endif
         }
     }
 
@@ -1089,6 +1091,7 @@ Cursor _glfwCreateCursorX11(const GLFWimage* image, int xhot, int yhot)
 
 int _glfwPlatformInit(void)
 {
+    printf("[KFX] _glfwPlatformInit():\n");
     // HACK: If the application has left the locale as "C" then both wide
     //       character text input and explicit UTF-8 input via XIM will break
     //       This sets the CTYPE part of the current locale from the environment
@@ -1096,9 +1099,12 @@ int _glfwPlatformInit(void)
     if (strcmp(setlocale(LC_CTYPE, NULL), "C") == 0)
         setlocale(LC_CTYPE, "");
 
+    printf("[KFX] - XInitThreads()\n");
     XInitThreads();
+    printf("[KFX] - XrmInitialize()\n");
     XrmInitialize();
 
+    printf("[KFX] - XOpenDisplay()\n");
     _glfw.x11.display = XOpenDisplay(NULL);
     if (!_glfw.x11.display)
     {
@@ -1117,30 +1123,43 @@ int _glfwPlatformInit(void)
         return GLFW_FALSE;
     }
 
+    
+    printf("[KFX] - DefaultScreen()\n");
     _glfw.x11.screen = DefaultScreen(_glfw.x11.display);
+    printf("[KFX] - RootWindow()\n");
     _glfw.x11.root = RootWindow(_glfw.x11.display, _glfw.x11.screen);
+    printf("[KFX] - XUniqueContext()\n");
     _glfw.x11.context = XUniqueContext();
 
+    printf("[KFX] - getSystemContentScale()\n");
     getSystemContentScale(&_glfw.x11.contentScaleX, &_glfw.x11.contentScaleY);
 
+    printf("[KFX] - createEmptyEventPipe()\n");
     if (!createEmptyEventPipe())
         return GLFW_FALSE;
 
+    printf("[KFX] - initExtensions()\n");
     if (!initExtensions())
         return GLFW_FALSE;
 
+    printf("[KFX] - createHelperWindow()\n");
     _glfw.x11.helperWindowHandle = createHelperWindow();
+    printf("[KFX] - createHiddenCursor()\n");
     _glfw.x11.hiddenCursorHandle = createHiddenCursor();
 
+    printf("[KFX] - XSupportsLocale()\n");
     if (XSupportsLocale())
     {
         XSetLocaleModifiers("");
 
+        printf("[KFX] - XOpenIM()\n");
         _glfw.x11.im = XOpenIM(_glfw.x11.display, 0, NULL, NULL);
         if (_glfw.x11.im)
         {
+            printf("[KFX] - hasUsableInputMethodStyle()\n");
             if (!hasUsableInputMethodStyle())
             {
+                printf("[KFX] - XCloseIM()\n");
                 XCloseIM(_glfw.x11.im);
                 _glfw.x11.im = NULL;
             }
@@ -1148,12 +1167,15 @@ int _glfwPlatformInit(void)
     }
 
 #if defined(__linux__)
+    printf("[KFX] - _glfwInitJoysticksLinux()\n");
     if (!_glfwInitJoysticksLinux())
         return GLFW_FALSE;
 #endif
 
+    printf("[KFX] - _glfwInitTimerPOSIX()\n");
     _glfwInitTimerPOSIX();
 
+    printf("[KFX] - _glfwPollMonitorsX11()\n");
     _glfwPollMonitorsX11();
     return GLFW_TRUE;
 }
