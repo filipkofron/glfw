@@ -31,8 +31,7 @@
 #include <float.h>
 #include <string.h>
 
-#if NEW_APPLE
-
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 // Returns the style mask corresponding to the window settings
 //
 static NSUInteger getStyleMask(_GLFWwindow* window)
@@ -213,9 +212,11 @@ static NSUInteger translateKeyToModifierFlag(int key)
 //
 static const NSRange kEmptyRange = { NSNotFound, 0 };
 
+
 //------------------------------------------------------------------------
 // Delegate for window related notifications
 //------------------------------------------------------------------------
+
 @interface GLFWWindowDelegate : NSObject
 {
     _GLFWwindow* window;
@@ -333,9 +334,11 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 @end
 
+
 //------------------------------------------------------------------------
 // Content view class for the GLFW window
 //------------------------------------------------------------------------
+
 @interface GLFWContentView : NSView <NSTextInputClient>
 {
     _GLFWwindow* window;
@@ -754,6 +757,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 @end
 
+
 //------------------------------------------------------------------------
 // GLFW window class
 //------------------------------------------------------------------------
@@ -775,6 +779,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 @end
+
 
 // Create the Cocoa window
 //
@@ -872,6 +877,7 @@ static GLFWbool createNativeWindow(_GLFWwindow* window,
     return GLFW_TRUE;
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
@@ -882,573 +888,12 @@ float _glfwTransformYCocoa(float y)
 {
     return CGDisplayBounds(CGMainDisplayID()).size.height - y - 1;
 }
-#endif // NEW_APPLE
 
-#if !NEW_APPLE
-//------------------------------------------------------------------------
-// GLFW window class
-//------------------------------------------------------------------------
-
-@interface GLFWWindow : NSWindow {}
-/* These are needed for borderless/fullscreen windows */
-- (BOOL)canBecomeKeyWindow;
-- (BOOL)canBecomeMainWindow;
-- (void)sendEvent:(NSEvent *)event;
-@end
-
-@implementation GLFWWindow
-- (BOOL)canBecomeKeyWindow
-{
-    return YES;
-}
-
-- (BOOL)canBecomeMainWindow
-{
-    return YES;
-}
-
-- (void)sendEvent:(NSEvent *)event
-{
-  [super sendEvent:event];
-
-  if ([event type] != NSLeftMouseUp) {
-      return;
-  }
-
-//   id delegate = [self delegate];
-//   if (![delegate isKindOfClass:[Cocoa_WindowListener class]]) {
-//       return;
-//   }
-
-//   if ([delegate isMoving]) {
-//       [delegate windowDidFinishMoving];
-//   }
-}
-@end
-
-@interface GLFWOpenGLContext : NSOpenGLContext {
-//    SDL_atomic_t dirty;
-//    SDL_Window *window;
-}
-
-- (id)initWithFormat:(NSOpenGLPixelFormat *)format
-        shareContext:(NSOpenGLContext *)share;
-- (void)scheduleUpdate;
-- (void)updateIfNeeded;
-//- (void)setWindow:(SDL_Window *)window;
-
-@end
-
-@implementation GLFWOpenGLContext : NSOpenGLContext
-
-- (id)initWithFormat:(NSOpenGLPixelFormat *)format
-        shareContext:(NSOpenGLContext *)share
-{
-    self = [super initWithFormat:format shareContext:share];
-    // if (self) {
-    //     SDL_AtomicSet(&self->dirty, 0);
-    //     self->window = NULL;
-    // }
-    return self;
-}
-
-- (void)scheduleUpdate
-{
-    // SDL_AtomicAdd(&self->dirty, 1);
-}
-
-/* This should only be called on the thread on which a user is using the context. */
-- (void)updateIfNeeded
-{
-    // int value = SDL_AtomicSet(&self->dirty, 0);
-    // if (value > 0) {
-        /* We call the real underlying update here, since -[SDLOpenGLContext update] just calls us. */
-        [super update];
-    // }
-}
-
-/* This should only be called on the thread on which a user is using the context. */
-- (void)update
-{
-    /* This ensures that regular 'update' calls clear the atomic dirty flag. */
-    [self scheduleUpdate];
-    [self updateIfNeeded];
-}
-
-/* Updates the drawable for the contexts and manages related state. */
-// - (void)setWindow:(SDL_Window *)newWindow
-// {
-//     if (self->window) {
-//         SDL_WindowData *oldwindowdata = (SDL_WindowData *)self->window->driverdata;
-
-//         /* Make sure to remove us from the old window's context list, or we'll get scheduled updates from it too. */
-//         NSMutableArray *contexts = oldwindowdata->nscontexts;
-//         @synchronized (contexts) {
-//             [contexts removeObject:self];
-//         }
-//     }
-
-//     self->window = newWindow;
-
-//     if (newWindow) {
-//         SDL_WindowData *windowdata = (SDL_WindowData *)newWindow->driverdata;
-
-//         /* Now sign up for scheduled updates for the new window. */
-//         NSMutableArray *contexts = windowdata->nscontexts;
-//         @synchronized (contexts) {
-//             [contexts addObject:self];
-//         }
-
-//         if ([self view] != [windowdata->nswindow contentView]) {
-//             [self setView:[windowdata->nswindow contentView]];
-//             if (self == [NSOpenGLContext currentContext]) {
-//                 [self update];
-//             } else {
-//                 [self scheduleUpdate];
-//             }
-//         }
-//     } else {
-//         [self clearDrawable];
-//         if (self == [NSOpenGLContext currentContext]) {
-//             [self update];
-//         } else {
-//             [self scheduleUpdate];
-//         }
-//     }
-// }
-
-@end
-
-//@interface GLFWView : NSOpenGLView
-@interface GLFWView : NSOpenGLView
-
-/* The default implementation doesn't pass rightMouseDown to responder chain */
-- (void)rightMouseDown:(NSEvent *)theEvent;
-@end
-
-@implementation GLFWView
-- (void)rightMouseDown:(NSEvent *)theEvent
-{
-    [[self nextResponder] rightMouseDown:theEvent];
-}
-
-- (void)resetCursorRects
-{
-    [super resetCursorRects];
-    // SDL_Mouse *mouse = SDL_GetMouse();
-
-    // if (mouse->cursor_shown && mouse->cur_cursor && !mouse->relative_mode) {
-    //     [self addCursorRect:[self bounds]
-    //                  cursor:mouse->cur_cursor->driverdata];
-    // } else {
-    //     [self addCursorRect:[self bounds]
-    //                  cursor:[NSCursor invisibleCursor]];
-    // }
-}
-@end
-
-// struct _GLFWwndconfig
-// {
-//     int           width;
-//     int           height;
-//     const char*   title;
-//     GLFWbool      resizable;
-//     GLFWbool      visible;
-//     GLFWbool      decorated;
-//     GLFWbool      focused;
-//     GLFWbool      autoIconify;
-//     GLFWbool      floating;
-//     GLFWbool      maximized;
-//     GLFWbool      centerCursor;
-//     GLFWbool      focusOnShow;
-//     GLFWbool      mousePassthrough;
-//     GLFWbool      scaleToMonitor;
-//     struct {
-//         GLFWbool  retina;
-//         char      frameName[256];
-//     } ns;
-//     struct {
-//         char      className[256];
-//         char      instanceName[256];
-//     } x11;
-//     struct {
-//         GLFWbool  keymenu;
-//     } win32;
-// };
-
-static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLFWbool resizable)
-{
-    unsigned int style = 0;
-
-    if (fullscreen) {
-        style = NSBorderlessWindowMask;
-    } else {
-        if (borderless) {
-            style = NSBorderlessWindowMask;
-        } else {
-            style = (NSTitledWindowMask|NSClosableWindowMask|NSMiniaturizableWindowMask);
-        }
-        if (resizable) {
-            style |= NSResizableWindowMask;
-        }
-    }
-
-    // Nice good old brushed metal look
-    style |= NSTexturedBackgroundWindowMask;
-
-    return style;
-}
-
-static int MakeCurrentGLContext(GLFWOpenGLContext* context)
-{
-    KFX_DBG("Make current context: %p", context);
-
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    if (context) {
-        //[nscontext setWindow:window];
-        [context updateIfNeeded];
-        [context makeCurrentContext];
-    } else {
-        [NSOpenGLContext clearCurrentContext];
-    }
-
-    [pool release];
-    return 0;
-}
-
-static void makeContextCurrentNSGL(_GLFWwindow* window)
-{
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    if (window)
-        [window->context.nsgl.object makeCurrentContext];
-    else
-        [NSOpenGLContext clearCurrentContext];
-
-    _glfwPlatformSetTls(&_glfw.contextSlot, window);
-
-    [pool release];
-}
-
-static GLFWglproc getProcAddressNSGL(const char* procname)
-{
-    CFStringRef symbolName = CFStringCreateWithCString(kCFAllocatorDefault,
-                                                       procname,
-                                                       kCFStringEncodingASCII);
-
-    //_glfw.nsgl.framework =
-//        CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl"))
-
-    GLFWglproc symbol = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl")),
-                                                          symbolName);
-
-    CFRelease(symbolName);
-
-    return symbol;
-}
-
-static void swapBuffersNSGL(_GLFWwindow* window)
-{
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    // HACK: Simulate vsync with usleep as NSGL swap interval does not apply to
-    //       windows with a non-visible occlusion state
-    // if (window->ns.occluded)
-    // {
-    //     int interval = 0;
-    //     [window->context.nsgl.object getValues:&interval
-    //                               forParameter:NSOpenGLContextParameterSwapInterval];
-
-    //     if (interval > 0)
-    //     {
-    //         const double framerate = 60.0;
-    //         const uint64_t frequency = _glfwPlatformGetTimerFrequency();
-    //         const uint64_t value = _glfwPlatformGetTimerValue();
-
-    //         const double elapsed = value / (double) frequency;
-    //         const double period = 1.0 / framerate;
-    //         const double delay = period - fmod(elapsed, period);
-
-    //         usleep(floorl(delay * 1e6));
-    //     }
-    // }
-
-    KFX_DBG("flush buffer");
-    [window->context.nsgl.object flushBuffer];
-
-    [pool release];
-}
-
-static void swapIntervalNSGL(int interval)
-{
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    if (window)
-    {
-        [window->context.nsgl.object setValues:&interval
-                                  forParameter:NSOpenGLCPSwapInterval];
-    }
-
-    [pool release];
-}
-
-static int extensionSupportedNSGL(const char* extension)
-{
-    // There are no NSGL extensions
-    return GLFW_FALSE;
-}
-
-static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display,
-                                _GLFWwindow* window,
-                                const _GLFWctxconfig* ctxconfig,
-                                const _GLFWfbconfig* fbconfig)
-{
-    KFX_DBG("Many missing coeffs");
-    // SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
-    // SDL_VideoDisplay *display = SDL_GetDisplayForWindow(window);
-    // SDL_DisplayData *displaydata = (SDL_DisplayData *)display->driverdata;
-    NSOpenGLPixelFormatAttribute attr[32];
-    NSOpenGLPixelFormat *fmt = NULL;
-    const char *glversion = NULL;
-    int glversion_major;
-    int glversion_minor;
-
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    //attr[i++] = NSOpenGLPFAColorSize;
-    //attr[i++] = SDL_BYTESPERPIXEL(display->current_mode.format)*8;
-
-    //attr[i++] = NSOpenGLPFADepthSize;
-    // attr[i++] = _this->gl_config.depth_size;
-
-    // if (_this->gl_config.double_buffer) {
-    //     attr[i++] = NSOpenGLPFADoubleBuffer;
-    // }
-
-    // if (_this->gl_config.stereo) {
-    //     attr[i++] = NSOpenGLPFAStereo;
-    // }
-
-    // if (_this->gl_config.stencil_size) {
-    //     attr[i++] = NSOpenGLPFAStencilSize;
-    //     attr[i++] = _this->gl_config.stencil_size;
-    // }
-
-    // if ((_this->gl_config.accum_red_size +
-    //      _this->gl_config.accum_green_size +
-    //      _this->gl_config.accum_blue_size +
-    //      _this->gl_config.accum_alpha_size) > 0) {
-    //     attr[i++] = NSOpenGLPFAAccumSize;
-    //     attr[i++] = _this->gl_config.accum_red_size + _this->gl_config.accum_green_size + _this->gl_config.accum_blue_size + _this->gl_config.accum_alpha_size;
-    // }
-
-    // if (_this->gl_config.multisamplebuffers) {
-    //     attr[i++] = NSOpenGLPFASampleBuffers;
-    //     attr[i++] = _this->gl_config.multisamplebuffers;
-    // }
-
-    // if (_this->gl_config.multisamplesamples) {
-    //     attr[i++] = NSOpenGLPFASamples;
-    //     attr[i++] = _this->gl_config.multisamplesamples;
-    //     attr[i++] = NSOpenGLPFANoRecovery;
-    // }
-
-    // if (_this->gl_config.accelerated >= 0) {
-    //     if (_this->gl_config.accelerated) {
-    //         attr[i++] = NSOpenGLPFAAccelerated;
-    //     } else {
-    //         attr[i++] = NSOpenGLPFARendererID;
-    //         attr[i++] = kCGLRendererGenericFloatID;
-    //     }
-    // }
-
-#define ADD_ATTRIB(a) \
-{ \
-    assert((size_t) index < sizeof(attribs) / sizeof(attr[0])); \
-    attr[index++] = a; \
-}
-#define SET_ATTRIB(a, v) { ADD_ATTRIB(a); ADD_ATTRIB(v); }
-
-    NSOpenGLPixelFormatAttribute attribs[40];
-    int index = 0;
-
-    ADD_ATTRIB(NSOpenGLPFAAccelerated);
-    ADD_ATTRIB(NSOpenGLPFAClosestPolicy);
-
-    if (ctxconfig->major <= 2)
-    {
-        if (fbconfig->auxBuffers != GLFW_DONT_CARE)
-            SET_ATTRIB(NSOpenGLPFAAuxBuffers, fbconfig->auxBuffers);
-
-        if (fbconfig->accumRedBits != GLFW_DONT_CARE &&
-            fbconfig->accumGreenBits != GLFW_DONT_CARE &&
-            fbconfig->accumBlueBits != GLFW_DONT_CARE &&
-            fbconfig->accumAlphaBits != GLFW_DONT_CARE)
-        {
-            const int accumBits = fbconfig->accumRedBits +
-                                  fbconfig->accumGreenBits +
-                                  fbconfig->accumBlueBits +
-                                  fbconfig->accumAlphaBits;
-
-            SET_ATTRIB(NSOpenGLPFAAccumSize, accumBits);
-        }
-    }
-
-    if (fbconfig->redBits != GLFW_DONT_CARE &&
-        fbconfig->greenBits != GLFW_DONT_CARE &&
-        fbconfig->blueBits != GLFW_DONT_CARE)
-    {
-        int colorBits = fbconfig->redBits +
-                        fbconfig->greenBits +
-                        fbconfig->blueBits;
-
-        // macOS needs non-zero color size, so set reasonable values
-        if (colorBits == 0)
-            colorBits = 24;
-        else if (colorBits < 15)
-            colorBits = 15;
-
-        SET_ATTRIB(NSOpenGLPFAColorSize, colorBits);
-    }
-
-    if (fbconfig->alphaBits != GLFW_DONT_CARE)
-        SET_ATTRIB(NSOpenGLPFAAlphaSize, fbconfig->alphaBits);
-
-    if (fbconfig->depthBits != GLFW_DONT_CARE)
-        SET_ATTRIB(NSOpenGLPFADepthSize, fbconfig->depthBits);
-
-    if (fbconfig->stencilBits != GLFW_DONT_CARE)
-        SET_ATTRIB(NSOpenGLPFAStencilSize, fbconfig->stencilBits);
-
-    if (fbconfig->stereo)
-    {
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200
-        _glfwInputError(GLFW_FORMAT_UNAVAILABLE,
-                        "NSGL: Stereo rendering is deprecated");
-        return GLFW_FALSE;
-#else
-        ADD_ATTRIB(NSOpenGLPFAStereo);
-#endif
-    }
-
-    if (fbconfig->doublebuffer)
-        ADD_ATTRIB(NSOpenGLPFADoubleBuffer);
-
-    if (fbconfig->samples != GLFW_DONT_CARE)
-    {
-        if (fbconfig->samples == 0)
-        {
-            SET_ATTRIB(NSOpenGLPFASampleBuffers, 0);
-        }
-        else
-        {
-            SET_ATTRIB(NSOpenGLPFASampleBuffers, 1);
-            SET_ATTRIB(NSOpenGLPFASamples, fbconfig->samples);
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-    SET_ATTRIB(NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(display));
-    ADD_ATTRIB(0);
-
-    fmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
-    if (fmt == nil) {
-        _glfwInputError(GLFW_FORMAT_UNAVAILABLE, "Failed creating OpenGL pixel format");
-        [pool release];
-        return NULL;
-    }
-
-    NSOpenGLContext* shareContext = nil;
-    // if (_this->gl_config.share_with_current_context) {
-    //     share_context = (NSOpenGLContext*)SDL_GL_GetCurrentContext();
-    // }
-
-    GLFWOpenGLContext* context = [[GLFWOpenGLContext alloc] initWithFormat:fmt shareContext:shareContext];
-
-    [fmt release];
-
-    if (context == nil) {
-        _glfwInputError(GLFW_PLATFORM_ERROR, "Failed creating OpenGL context");
-        [pool release];
-        return NULL;
-    }
-
-    [pool release];
-
-    // KFX TODO: Isn't this supposed to happen later?
-    if (MakeCurrentGLContext(context) < 0 ) {
-        [context release];
-        _glfwInputError(GLFW_PLATFORM_ERROR, "Failed making OpenGL context current");
-        return NULL;
-    }
-
-    // if (_this->gl_config.major_version < 3 &&
-    //     _this->gl_config.profile_mask == 0 &&
-    //     _this->gl_config.flags == 0) {
-    //     /* This is a legacy profile, so to match other backends, we're done. */
-    // } else {
-    //     const GLubyte *(APIENTRY * glGetStringFunc)(GLenum);
-
-    //     glGetStringFunc = (const GLubyte *(APIENTRY *)(GLenum)) SDL_GL_GetProcAddress("glGetString");
-    //     if (!glGetStringFunc) {
-    //         Cocoa_GL_DeleteContext(_this, context);
-    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed getting OpenGL glGetString entry point");
-    //         return NULL;
-    //     }
-
-    //     glversion = (const char *)glGetStringFunc(GL_VERSION);
-    //     if (glversion == NULL) {
-    //         Cocoa_GL_DeleteContext(_this, context);
-    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed getting OpenGL context version");
-    //         return NULL;
-    //     }
-
-    //     if (SDL_sscanf(glversion, "%d.%d", &glversion_major, &glversion_minor) != 2) {
-    //         Cocoa_GL_DeleteContext(_this, context);
-    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed parsing OpenGL context version");
-    //         return NULL;
-    //     }
-
-    //     if ((glversion_major < _this->gl_config.major_version) ||
-    //        ((glversion_major == _this->gl_config.major_version) && (glversion_minor < _this->gl_config.minor_version))) {
-    //         Cocoa_GL_DeleteContext(_this, context);
-    //         _glfwInputError(GLFW_PLATFORM_ERROR, "Failed creating OpenGL context at version requested");
-    //         return NULL;
-    //     }
-
-    //     /* In the future we'll want to do this, but to match other platforms
-    //        we'll leave the OpenGL version the way it is for now
-    //      */
-    //     /*_this->gl_config.major_version = glversion_major;*/
-    //     /*_this->gl_config.minor_version = glversion_minor;*/
-    // }
-
-    window->context.makeCurrent = makeContextCurrentNSGL;
-    window->context.swapBuffers = swapBuffersNSGL;
-    window->context.swapInterval = swapIntervalNSGL;
-    window->context.extensionSupported = extensionSupportedNSGL;
-    window->context.getProcAddress = getProcAddressNSGL;
-    // window->context.destroy = destroyContextNSGL;
-
-    return context;
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
-#if NEW_APPLE
+
 GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
                                 const _GLFWwndconfig* wndconfig,
                                 const _GLFWctxconfig* ctxconfig,
@@ -1518,142 +963,7 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
-                                const _GLFWwndconfig* wndconfig,
-                                const _GLFWctxconfig* ctxconfig,
-                                const _GLFWfbconfig* fbconfig)
-{
-    KFX_DBG("NOT IMPLEMENTED");
 
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    KFX_DBG("TODO: Opening window on [0, 0], use automatic placement");
-    NSRect rect = {};
-    rect.origin.x = 0;
-    rect.origin.y = 0;
-    rect.size.width = wndconfig->width;
-    rect.size.height = wndconfig->height;
-
-    KFX_DBG("TODO: convert NSRect to native space via CGDisplayPixelsHigh(kCGDirectMainDisplay)");
-
-    NSArray* screens = [NSScreen screens];
-    KFX_DBG("Screens count: %i", [screens count]);
-    KFX_DBG("TODO: select proper screen");
-    NSScreen* screen = [screens objectAtIndex: 0];
-
-    unsigned int style = GetWindowStyle(GLFW_FALSE, GLFW_FALSE, wndconfig->resizable);
-    KFX_DBG("initWithContentRect:[%lf, %lf, %lf, %lf] styleMask:%u screen:%p",
-        rect.origin.x,
-        rect.origin.y,
-        rect.size.width,
-        rect.size.height,
-        style,
-        screen);
-
-    NSWindow* nswindow = [[GLFWWindow alloc] initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO screen:screen];
-    window->ns.nswindow = nswindow;
-
-    /* Create a default view for this window */
-    rect = [nswindow contentRectForFrameRect:[nswindow frame]];
-    KFX_DBG("contentRectForFrameRect: [%lf, %lf, %lf, %lf]",
-    rect.origin.x,
-    rect.origin.y,
-    rect.size.width,
-    rect.size.height);
-
-    NSView* contentView = [[GLFWView alloc] initWithFrame:rect];
-
-    // if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
-    //     if ([contentView respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
-    //         [contentView setWantsBestResolutionOpenGLSurface:YES];
-    //     }
-    // }
-
-    KFX_DBG("setContentView: ");
-    [nswindow setContentView: contentView];
-    /* Prevents the window's "window device" from being destroyed when it is
-     * hidden. See http://www.mikeash.com/pyblog/nsopenglcontext-and-one-shot.html
-     */
-     KFX_DBG("setOneShot");
-    [nswindow setOneShot:NO];
-
-
-    KFX_DBG("orderFront");
-    [nswindow orderFront: nil];
-    // Show window
-    KFX_DBG("makeKeyAndOrderFront");
-    [nswindow makeKeyAndOrderFront:nil];
-
-    KFX_DBG("makeFirstResponder");
-    [nswindow makeFirstResponder:contentView];
-    //[nswindow setTitle:wndconfig->title];
-    //[nswindow setDelegate:window->ns.delegate];
-
-    KFX_DBG("setDelegate: NSResponder alloc");
-    [nswindow setDelegate: [[NSResponder alloc] init]];
-
-    KFX_DBG("setAcceptsMouseMovedEvents");
-    [nswindow setAcceptsMouseMovedEvents:YES];
-
-    // Not on tiger (at min)
-    // [nswindow setRestorable:NO];
-
-
-
-
-    if (ctxconfig->client != GLFW_NO_API)
-    {
-        if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
-        {
-                uint32_t displayCount = 0;
-                CGGetOnlineDisplayList(0, NULL, &displayCount);
-                KFX_DBG("CGGetOnlineDisplayList count: %i", displayCount);
-                CGDirectDisplayID* displays = _glfw_calloc(displayCount, sizeof(CGDirectDisplayID));
-                CGGetOnlineDisplayList(displayCount, displays, &displayCount);
-
-                KFX_DBG("TODO: Taking the first display, use CGDisplayIsMain(displays[i]), skip CGDisplayMirrorsDisplay");
-                GLFWOpenGLContext* context = CreateGLContext(displays[0], window, ctxconfig, fbconfig);
-                window->context.nsgl.object = context;
-                [context setView: contentView];
-
-                KFX_DBG("context: %p", context);
-
-                KFX_DBG("_glfwPlatformSetTls: %p", window);
-                _glfwPlatformSetTls(&_glfw.contextSlot, window);
-
-                _glfw_free(displays);
-        }
-        else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
-        {
-            if (!_glfwInitOSMesa())
-                return GLFW_FALSE;
-            if (!_glfwCreateContextOSMesa(window, ctxconfig, fbconfig))
-                return GLFW_FALSE;
-        }
-        else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR, "EGL context unsupported on this platform.");
-        }
-
-        if (!_glfwRefreshContextAttribs(window, ctxconfig))
-            return GLFW_FALSE;
-    }
-
-
-
-
-
-
-
-    [contentView release];
-    [pool release];
-
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
-
-#if NEW_APPLE
 void _glfwDestroyWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1684,18 +994,7 @@ void _glfwDestroyWindowCocoa(_GLFWwindow* window)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwDestroyWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
 
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    [pool release];
-}
-#endif // NEW_APPLE
-
-#if NEW_APPLE
 void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
 {
     @autoreleasepool {
@@ -1706,12 +1005,6 @@ void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
     [window->ns.object setMiniwindowTitle:string];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowTitleCocoa(_GLFWwindow* window, const char* title)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
 void _glfwSetWindowIconCocoa(_GLFWwindow* window,
                              int count, const GLFWimage* images)
@@ -1720,7 +1013,6 @@ void _glfwSetWindowIconCocoa(_GLFWwindow* window,
                     "Cocoa: Regular windows do not have icons on macOS");
 }
 
-#if NEW_APPLE
 void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 {
     @autoreleasepool {
@@ -1735,18 +1027,7 @@ void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetWindowPosCocoa(_GLFWwindow* window, int* xpos, int* ypos)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [0, 0]");
-    if (xpos)
-        *xpos = 0;
-    if (ypos)
-        *ypos = 0;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
 {
     @autoreleasepool {
@@ -1758,14 +1039,7 @@ void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
     @autoreleasepool {
@@ -1779,18 +1053,7 @@ void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
-    if (width)
-        *width = 800;
-    if (height)
-        *height = 600;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
 {
     @autoreleasepool {
@@ -1812,14 +1075,7 @@ void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
                                    int minwidth, int minheight,
                                    int maxwidth, int maxheight)
@@ -1838,16 +1094,7 @@ void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowSizeLimitsCocoa(_GLFWwindow* window,
-                                   int minwidth, int minheight,
-                                   int maxwidth, int maxheight)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
 {
     @autoreleasepool {
@@ -1857,14 +1104,7 @@ void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
         [window->ns.object setContentAspectRatio:NSMakeSize(numer, denom)];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
     @autoreleasepool {
@@ -1879,18 +1119,7 @@ void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
-    if (width)
-        *width = 800;
-    if (height)
-        *height = 600;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
                                   int* left, int* top,
                                   int* right, int* bottom)
@@ -1913,24 +1142,7 @@ void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
-                                  int* left, int* top,
-                                  int* right, int* bottom)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [0, 0] [800, 600]");
-    if (left)
-        *left = 0;
-    if (top)
-        *top = 0;
-    if (right)
-        *right = 800;
-    if (bottom)
-        *bottom = 600;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
                                      float* xscale, float* yscale)
 {
@@ -1946,33 +1158,14 @@ void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
-                                     float* xscale, float* yscale)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [1, 1]");
-    if (xscale)
-        *xscale = 1;
-    if (yscale)
-        *yscale = 1;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwIconifyWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object miniaturize:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwIconifyWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwRestoreWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1982,14 +1175,7 @@ void _glfwRestoreWindowCocoa(_GLFWwindow* window)
         [window->ns.object zoom:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwRestoreWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -1997,56 +1183,28 @@ void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
         [window->ns.object zoom:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwMaximizeWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwShowWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object orderFront:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwShowWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwHideWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [window->ns.object orderOut:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwHideWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwRequestWindowAttentionCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     [NSApp requestUserAttention:NSInformationalRequest];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwRequestWindowAttentionCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwFocusWindowCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -2058,14 +1216,7 @@ void _glfwFocusWindowCocoa(_GLFWwindow* window)
     [window->ns.object makeKeyAndOrderFront:nil];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwFocusWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
                                 _GLFWmonitor* monitor,
                                 int xpos, int ypos,
@@ -2158,78 +1309,35 @@ void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowMonitorCocoa(_GLFWwindow* window,
-                                _GLFWmonitor* monitor,
-                                int xpos, int ypos,
-                                int width, int height,
-                                int refreshRate)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isKeyWindow];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwWindowFocusedCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwWindowIconifiedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isMiniaturized];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwWindowIconifiedCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwWindowVisibleCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isVisible];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwWindowVisibleCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwWindowMaximizedCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return [window->ns.object isZoomed];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwWindowMaximizedCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
@@ -2247,44 +1355,21 @@ GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwWindowHoveredCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwFramebufferTransparentCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return ![window->ns.object isOpaque] && ![window->ns.view isOpaque];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwFramebufferTransparentCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-    return GLFW_TRUE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowResizableCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
     [window->ns.object setStyleMask:getStyleMask(window)];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowResizableCocoa(_GLFWwindow* window, GLFWbool enabled)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
@@ -2292,14 +1377,7 @@ void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
     [window->ns.object makeFirstResponder:window->ns.view];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowDecoratedCocoa(_GLFWwindow* window, GLFWbool enabled)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
@@ -2309,55 +1387,27 @@ void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
         [window->ns.object setLevel:NSNormalWindowLevel];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowFloatingCocoa(_GLFWwindow* window, GLFWbool enabled)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowMousePassthroughCocoa(_GLFWwindow* window, GLFWbool enabled)
 {
     @autoreleasepool {
     [window->ns.object setIgnoresMouseEvents:enabled];
     }
 }
-#else // NEW_APPLE
-void _glfwSetWindowMousePassthroughCocoa(_GLFWwindow* window, GLFWbool enabled)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
 {
     @autoreleasepool {
     return (float) [window->ns.object alphaValue];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-float _glfwGetWindowOpacityCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning 1");
-    return 1.0f;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetWindowOpacityCocoa(_GLFWwindow* window, float opacity)
 {
     @autoreleasepool {
     [window->ns.object setAlphaValue:opacity];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetWindowOpacityCocoa(_GLFWwindow* window, float opacity)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
 void _glfwSetRawMouseMotionCocoa(_GLFWwindow *window, GLFWbool enabled)
 {
@@ -2370,7 +1420,6 @@ GLFWbool _glfwRawMouseMotionSupportedCocoa(void)
     return GLFW_FALSE;
 }
 
-#if NEW_APPLE
 void _glfwPollEventsCocoa(void)
 {
     @autoreleasepool {
@@ -2389,39 +1438,7 @@ void _glfwPollEventsCocoa(void)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwPollEventsCocoa(void)
-{
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    // /* Update activity every 30 seconds to prevent screensaver */
-    // if (_this->suspend_screensaver) {
-    //     SDL_VideoData *data = (SDL_VideoData *)_this->driverdata;
-    //     Uint32 now = SDL_GetTicks();
-    //     if (!data->screensaver_activity ||
-    //         SDL_TICKS_PASSED(now, data->screensaver_activity + 30000)) {
-    //         UpdateSystemActivity(UsrActivity);
-    //         data->screensaver_activity = now;
-    //     }
-    // }
-
-    for (;;)
-    {
-        NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
-                                            untilDate:[NSDate distantPast]
-                                               inMode:NSDefaultRunLoopMode
-                                              dequeue:YES];
-        if (event == nil)
-            break;
-
-        [NSApp sendEvent:event];
-    }
-
-    [pool release];
-}
-#endif // NEW_APPLE
-
-#if NEW_APPLE
 void _glfwWaitEventsCocoa(void)
 {
     @autoreleasepool {
@@ -2439,14 +1456,7 @@ void _glfwWaitEventsCocoa(void)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwWaitEventsCocoa(void)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwWaitEventsTimeoutCocoa(double timeout)
 {
     @autoreleasepool {
@@ -2463,14 +1473,7 @@ void _glfwWaitEventsTimeoutCocoa(double timeout)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwWaitEventsTimeoutCocoa(double timeout)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwPostEmptyEventCocoa(void)
 {
     @autoreleasepool {
@@ -2488,14 +1491,7 @@ void _glfwPostEmptyEventCocoa(void)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwPostEmptyEventCocoa(void)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
 {
     @autoreleasepool {
@@ -2511,18 +1507,7 @@ void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning [400, 300]");
-    if (xpos)
-        *xpos = 400;
-    if (ypos)
-        *ypos = 300;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetCursorPosCocoa(_GLFWwindow* window, double x, double y)
 {
     @autoreleasepool {
@@ -2558,14 +1543,7 @@ void _glfwSetCursorPosCocoa(_GLFWwindow* window, double x, double y)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetCursorPosCocoa(_GLFWwindow* window, double x, double y)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetCursorModeCocoa(_GLFWwindow* window, int mode)
 {
     @autoreleasepool {
@@ -2573,14 +1551,7 @@ void _glfwSetCursorModeCocoa(_GLFWwindow* window, int mode)
         updateCursorMode(window);
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetCursorModeCocoa(_GLFWwindow* window, int mode)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 const char* _glfwGetScancodeNameCocoa(int scancode)
 {
     @autoreleasepool {
@@ -2629,28 +1600,12 @@ const char* _glfwGetScancodeNameCocoa(int scancode)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-const char* _glfwGetScancodeNameCocoa(int scancode)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning '0'");
-    return "0";
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 int _glfwGetKeyScancodeCocoa(int key)
 {
     return _glfw.ns.scancodes[key];
 }
-#else // NEW_APPLE
-int _glfwGetKeyScancodeCocoa(int key)
-{
-    KFX_DBG("NOT IMPLEMENTED returning 0");
-    return 0;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwCreateCursorCocoa(_GLFWcursor* cursor,
                                 const GLFWimage* image,
                                 int xhot, int yhot)
@@ -2694,17 +1649,7 @@ GLFWbool _glfwCreateCursorCocoa(_GLFWcursor* cursor,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwCreateCursorCocoa(_GLFWcursor* cursor,
-                                const GLFWimage* image,
-                                int xhot, int yhot)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning false");
-    return GLFW_FALSE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 GLFWbool _glfwCreateStandardCursorCocoa(_GLFWcursor* cursor, int shape)
 {
     @autoreleasepool {
@@ -2778,15 +1723,7 @@ GLFWbool _glfwCreateStandardCursorCocoa(_GLFWcursor* cursor, int shape)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-GLFWbool _glfwCreateStandardCursorCocoa(_GLFWcursor* cursor, int shape)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning false");
-    return GLFW_FALSE;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwDestroyCursorCocoa(_GLFWcursor* cursor)
 {
     @autoreleasepool {
@@ -2794,14 +1731,7 @@ void _glfwDestroyCursorCocoa(_GLFWcursor* cursor)
         [(NSCursor*) cursor->ns.object release];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwDestroyCursorCocoa(_GLFWcursor* cursor)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetCursorCocoa(_GLFWwindow* window, _GLFWcursor* cursor)
 {
     @autoreleasepool {
@@ -2809,14 +1739,7 @@ void _glfwSetCursorCocoa(_GLFWwindow* window, _GLFWcursor* cursor)
         updateCursorImage(window);
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetCursorCocoa(_GLFWwindow* window, _GLFWcursor* cursor)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwSetClipboardStringCocoa(const char* string)
 {
     @autoreleasepool {
@@ -2825,14 +1748,7 @@ void _glfwSetClipboardStringCocoa(const char* string)
     [pasteboard setString:@(string) forType:NSPasteboardTypeString];
     } // autoreleasepool
 }
-#else // NEW_APPLE
-void _glfwSetClipboardStringCocoa(const char* string)
-{
-    KFX_DBG("NOT IMPLEMENTED");
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 const char* _glfwGetClipboardStringCocoa(void)
 {
     @autoreleasepool {
@@ -2861,15 +1777,7 @@ const char* _glfwGetClipboardStringCocoa(void)
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-const char* _glfwGetClipboardStringCocoa(void)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning \"\"");
-    return "";
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
 {
     if (_glfw.egl.ANGLE_platform_angle)
@@ -2900,33 +1808,17 @@ EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
 
     return 0;
 }
-#else // NEW_APPLE
-EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning 0");
-    return 0;
-}
-#endif // NEW_APPLE
 
 EGLNativeDisplayType _glfwGetEGLNativeDisplayCocoa(void)
 {
     return EGL_DEFAULT_DISPLAY;
 }
 
-#if NEW_APPLE
 EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window)
 {
     return window->ns.layer;
 }
-#else // NEW_APPLE
-EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning NULL");
-    return NULL;
-}
-#endif // NEW_APPLE
 
-#if NEW_APPLE
 void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
 {
     if (_glfw.vk.KHR_surface && _glfw.vk.EXT_metal_surface)
@@ -2940,12 +1832,6 @@ void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
         extensions[1] = "VK_MVK_macos_surface";
     }
 }
-#else // NEW_APPLE
-void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
-{
-    KFX_DBG("NOT IMPLEMENTED - not doing anything");
-}
-#endif // NEW_APPLE
 
 GLFWbool _glfwGetPhysicalDevicePresentationSupportCocoa(VkInstance instance,
                                                         VkPhysicalDevice device,
@@ -2954,7 +1840,6 @@ GLFWbool _glfwGetPhysicalDevicePresentationSupportCocoa(VkInstance instance,
     return GLFW_TRUE;
 }
 
-#if NEW_APPLE
 VkResult _glfwCreateWindowSurfaceCocoa(VkInstance instance,
                                        _GLFWwindow* window,
                                        const VkAllocationCallbacks* allocator,
@@ -3045,21 +1930,12 @@ VkResult _glfwCreateWindowSurfaceCocoa(VkInstance instance,
 
     } // autoreleasepool
 }
-#else // NEW_APPLE
-VkResult _glfwCreateWindowSurfaceCocoa(VkInstance instance,
-                                       _GLFWwindow* window,
-                                       const VkAllocationCallbacks* allocator,
-                                       VkSurfaceKHR* surface)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning NOT_PRESENT");
-    return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
-#endif // NEW_APPLE
+
 
 //////////////////////////////////////////////////////////////////////////
 //////                        GLFW native API                       //////
 //////////////////////////////////////////////////////////////////////////
-#if NEW_APPLE
+
 GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
 {
     _GLFWwindow* window = (_GLFWwindow*) handle;
@@ -3074,10 +1950,5 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
 
     return window->ns.object;
 }
-#else // NEW_APPLE
-GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
-{
-    KFX_DBG("NOT IMPLEMENTED - returning NULL");
-    return NULL;
-}
-#endif // NEW_APPLE
+
+#endif // MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
