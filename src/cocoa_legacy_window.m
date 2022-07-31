@@ -77,99 +77,6 @@
 }
 @end
 
-@interface GLFWOpenGLContext : NSOpenGLContext {
-//    SDL_atomic_t dirty;
-//    SDL_Window *window;
-}
-
-- (id)initWithFormat:(NSOpenGLPixelFormat *)format
-        shareContext:(NSOpenGLContext *)share;
-- (void)scheduleUpdate;
-- (void)updateIfNeeded;
-//- (void)setWindow:(SDL_Window *)window;
-
-@end
-
-@implementation GLFWOpenGLContext : NSOpenGLContext
-
-- (id)initWithFormat:(NSOpenGLPixelFormat *)format
-        shareContext:(NSOpenGLContext *)share
-{
-    self = [super initWithFormat:format shareContext:share];
-    // if (self) {
-    //     SDL_AtomicSet(&self->dirty, 0);
-    //     self->window = NULL;
-    // }
-    return self;
-}
-
-- (void)scheduleUpdate
-{
-    // SDL_AtomicAdd(&self->dirty, 1);
-}
-
-/* This should only be called on the thread on which a user is using the context. */
-- (void)updateIfNeeded
-{
-    // int value = SDL_AtomicSet(&self->dirty, 0);
-    // if (value > 0) {
-        /* We call the real underlying update here, since -[SDLOpenGLContext update] just calls us. */
-        [super update];
-    // }
-}
-
-/* This should only be called on the thread on which a user is using the context. */
-- (void)update
-{
-    /* This ensures that regular 'update' calls clear the atomic dirty flag. */
-    [self scheduleUpdate];
-    [self updateIfNeeded];
-}
-
-/* Updates the drawable for the contexts and manages related state. */
-// - (void)setWindow:(SDL_Window *)newWindow
-// {
-//     if (self->window) {
-//         SDL_WindowData *oldwindowdata = (SDL_WindowData *)self->window->driverdata;
-
-//         /* Make sure to remove us from the old window's context list, or we'll get scheduled updates from it too. */
-//         NSMutableArray *contexts = oldwindowdata->nscontexts;
-//         @synchronized (contexts) {
-//             [contexts removeObject:self];
-//         }
-//     }
-
-//     self->window = newWindow;
-
-//     if (newWindow) {
-//         SDL_WindowData *windowdata = (SDL_WindowData *)newWindow->driverdata;
-
-//         /* Now sign up for scheduled updates for the new window. */
-//         NSMutableArray *contexts = windowdata->nscontexts;
-//         @synchronized (contexts) {
-//             [contexts addObject:self];
-//         }
-
-//         if ([self view] != [windowdata->nswindow contentView]) {
-//             [self setView:[windowdata->nswindow contentView]];
-//             if (self == [NSOpenGLContext currentContext]) {
-//                 [self update];
-//             } else {
-//                 [self scheduleUpdate];
-//             }
-//         }
-//     } else {
-//         [self clearDrawable];
-//         if (self == [NSOpenGLContext currentContext]) {
-//             [self update];
-//         } else {
-//             [self scheduleUpdate];
-//         }
-//     }
-// }
-
-@end
-
 @interface GLFWView : NSOpenGLView
 
 /* The default implementation doesn't pass rightMouseDown to responder chain */
@@ -207,7 +114,7 @@ typedef enum
 
 @interface CocoaWindowListener : NSResponder {
 
-    GLFWWindow* window;
+    _GLFWwindow* window;
     BOOL observingVisible;
     BOOL wasCtrlLeft;
     BOOL wasVisible;
@@ -218,7 +125,7 @@ typedef enum
     int pendingWindowWarpX, pendingWindowWarpY;
 }
 
--(void) listen:(GLFWWindow*) data;
+-(void) listen:(_GLFWwindow*) data;
 -(void) pauseVisibleObservation;
 -(void) resumeVisibleObservation;
 -(BOOL) setFullscreenSpace:(BOOL) state;
@@ -253,10 +160,6 @@ typedef enum
 -(void) rightMouseDragged:(NSEvent*) theEvent;
 -(void) otherMouseDragged:(NSEvent*) theEvent;
 -(void) scrollWheel:(NSEvent*) theEvent;
--(void) touchesBeganWithEvent:(NSEvent*) theEvent;
--(void) touchesMovedWithEvent:(NSEvent*) theEvent;
--(void) touchesEndedWithEvent:(NSEvent*) theEvent;
--(void) touchesCancelledWithEvent:(NSEvent*) theEvent;
 
 @end
 
@@ -286,45 +189,45 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 @implementation CocoaWindowListener
 
-- (void)listen:(GLFWWindow *)win
+- (void)listen:(_GLFWwindow *)win
 {
-    NSNotificationCenter *center;
-    NSView *view = [window contentView];
-
     window = win;
     observingVisible = YES;
     wasCtrlLeft = NO;
-    wasVisible = [window isVisible];
+    wasVisible = [window->ns.nswindow isVisible];
     isFullscreenSpace = NO;
     inFullscreenTransition = NO;
     pendingWindowOperation = PENDING_OPERATION_NONE;
     isMoving = NO;
 
+    NSNotificationCenter *center;
+    NSView *view = [window->ns.nswindow contentView];
+
     center = [NSNotificationCenter defaultCenter];
 
-    if ([window delegate] != nil) {
-        [center addObserver:self selector:@selector(windowDidExpose:) name:NSWindowDidExposeNotification object:window];
-        [center addObserver:self selector:@selector(windowDidMove:) name:NSWindowDidMoveNotification object:window];
-        [center addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:window];
-        [center addObserver:self selector:@selector(windowDidMiniaturize:) name:NSWindowDidMiniaturizeNotification object:window];
-        [center addObserver:self selector:@selector(windowDidDeminiaturize:) name:NSWindowDidDeminiaturizeNotification object:window];
-        [center addObserver:self selector:@selector(windowDidBecomeKey:) name:NSWindowDidBecomeKeyNotification object:window];
-        [center addObserver:self selector:@selector(windowDidResignKey:) name:NSWindowDidResignKeyNotification object:window];
+    if ([window->ns.nswindow delegate] != nil) {
+        [center addObserver:self selector:@selector(windowDidExpose:) name:NSWindowDidExposeNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidMove:) name:NSWindowDidMoveNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidMiniaturize:) name:NSWindowDidMiniaturizeNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidDeminiaturize:) name:NSWindowDidDeminiaturizeNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidBecomeKey:) name:NSWindowDidBecomeKeyNotification object:window->ns.nswindow];
+        [center addObserver:self selector:@selector(windowDidResignKey:) name:NSWindowDidResignKeyNotification object:window->ns.nswindow];
     } else {
-        [window setDelegate:self];
+        [window->ns.nswindow setDelegate:self];
     }
 
     /* Haven't found a delegate / notification that triggers when the window is
      * ordered out (is not visible any more). You can be ordered out without
      * minimizing, so DidMiniaturize doesn't work. (e.g. -[NSWindow orderOut:])
      */
-    [window addObserver:self
+    [window->ns.nswindow addObserver:self
              forKeyPath:@"visible"
                 options:NSKeyValueObservingOptionNew
                 context:NULL];
 
-    [window setNextResponder:self];
-    [window setAcceptsMouseMovedEvents:YES];
+    [window->ns.nswindow setNextResponder:self];
+    [window->ns.nswindow setAcceptsMouseMovedEvents:YES];
 
     [view setNextResponder:self];
 }
@@ -366,27 +269,27 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 - (void)close
 {
     NSNotificationCenter *center;
-    NSView *view = [window contentView];
+    NSView *view = [window->ns.nswindow contentView];
     NSArray *windows = nil;
 
     center = [NSNotificationCenter defaultCenter];
 
-    if ([window delegate] != self) {
-        [center removeObserver:self name:NSWindowDidExposeNotification object:window];
-        [center removeObserver:self name:NSWindowDidMoveNotification object:window];
-        [center removeObserver:self name:NSWindowDidResizeNotification object:window];
-        [center removeObserver:self name:NSWindowDidMiniaturizeNotification object:window];
-        [center removeObserver:self name:NSWindowDidDeminiaturizeNotification object:window];
-        [center removeObserver:self name:NSWindowDidBecomeKeyNotification object:window];
-        [center removeObserver:self name:NSWindowDidResignKeyNotification object:window];
+    if ([window->ns.nswindow delegate] != self) {
+        [center removeObserver:self name:NSWindowDidExposeNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidMoveNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidResizeNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidMiniaturizeNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidDeminiaturizeNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidBecomeKeyNotification object:window->ns.nswindow];
+        [center removeObserver:self name:NSWindowDidResignKeyNotification object:window->ns.nswindow];
     } else {
-        [window setDelegate:nil];
+        [window->ns.nswindow setDelegate:nil];
     }
 
-    [window removeObserver:self forKeyPath:@"visible"];
+    [window->ns.nswindow removeObserver:self forKeyPath:@"visible"];
 
-    if ([window nextResponder] == self) {
-        [window setNextResponder:nil];
+    if ([window->ns.nswindow nextResponder] == self) {
+        [window->ns.nswindow setNextResponder:nil];
     }
     if ([view nextResponder] == self) {
         [view setNextResponder:nil];
@@ -406,7 +309,7 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
     int i;
     for (i = 0; i < [windows count]; i++) {
         NSWindow *win = [windows objectAtIndex:i];
-        if (win == window) {
+        if (win == window->ns.nswindow) {
             continue;
         }
 
@@ -428,6 +331,8 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidFinishMoving
 {
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (BOOL)windowShouldClose:(id)sender
@@ -437,6 +342,9 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidExpose:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowWillMove:(NSNotification *)aNotification
@@ -445,18 +353,30 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidMove:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowDidResize:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowDidMiniaturize:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowDidDeminiaturize:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)aNotification
@@ -473,6 +393,9 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidEnterFullScreen:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 - (void)windowWillExitFullScreen:(NSNotification *)aNotification
@@ -483,6 +406,9 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidExitFullScreen:(NSNotification *)aNotification
 {
+    KFX_DBG("Trigger update");
+    [[window->ns.nswindow contentView] update];
+    [window->context.nsgl.object update];
 }
 
 /* We'll respond to key events by doing nothing so we don't beep.
@@ -558,15 +484,14 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 }
 @end
 
-static int MakeCurrentGLContext(GLFWOpenGLContext* context)
+static int MakeCurrentGLContext(NSOpenGLContext* context)
 {
     KFX_DBG("Make current context: %p", context);
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
     if (context) {
-        //[nscontext setWindow:window];
-        [context updateIfNeeded];
+        [context update];
         [context makeCurrentContext];
     } else {
         [NSOpenGLContext clearCurrentContext];
@@ -633,7 +558,6 @@ static void swapBuffersNSGL(_GLFWwindow* window)
     //     }
     // }
 
-    KFX_DBG("flush buffer");
     [window->context.nsgl.object flushBuffer];
 
     [pool release];
@@ -659,7 +583,7 @@ static int extensionSupportedNSGL(const char* extension)
     return GLFW_FALSE;
 }
 
-static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display,
+static NSOpenGLContext* CreateGLContext(CGDirectDisplayID display,
                                 _GLFWwindow* window,
                                 const _GLFWctxconfig* ctxconfig,
                                 const _GLFWfbconfig* fbconfig)
@@ -827,7 +751,7 @@ static GLFWOpenGLContext* CreateGLContext(CGDirectDisplayID display,
     //     share_context = (NSOpenGLContext*)SDL_GL_GetCurrentContext();
     // }
 
-    GLFWOpenGLContext* context = [[GLFWOpenGLContext alloc] initWithFormat:fmt shareContext:shareContext];
+    NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithFormat:fmt shareContext:shareContext];
 
     [fmt release];
 
@@ -983,7 +907,7 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     nswindow->listener = [[CocoaWindowListener alloc] init];
 
     /* Set up the listener after we create the view */
-    [nswindow->listener listen:nswindow];
+    [nswindow->listener listen:window];
 
     // Not on tiger (at min)
     // [nswindow setRestorable:NO];
@@ -1002,7 +926,7 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
                 CGGetOnlineDisplayList(displayCount, displays, &displayCount);
 
                 KFX_DBG("TODO: Taking the first display, use CGDisplayIsMain(displays[i]), skip CGDisplayMirrorsDisplay");
-                GLFWOpenGLContext* context = CreateGLContext(displays[0], window, ctxconfig, fbconfig);
+                NSOpenGLContext* context = CreateGLContext(displays[0], window, ctxconfig, fbconfig);
                 window->context.nsgl.object = context;
                 [context setView: contentView];
 

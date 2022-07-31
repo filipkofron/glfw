@@ -41,6 +41,8 @@
 typedef void* id;
 #endif
 
+//#define NEW_APPLE 1
+
 #if NEW_APPLE
 
 // NOTE: Many Cocoa enum values have been renamed and we need to build across
