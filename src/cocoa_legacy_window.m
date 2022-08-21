@@ -77,30 +77,35 @@
 }
 @end
 
-@interface GLFWView : NSOpenGLView
+@interface GLFWView : NSView {
+    _GLFWwindow* window;
+}
 
 /* The default implementation doesn't pass rightMouseDown to responder chain */
-- (void)rightMouseDown:(NSEvent *)theEvent;
+- (void)resetCursorRects;
 @end
 
 @implementation GLFWView
-- (void)rightMouseDown:(NSEvent *)theEvent
+- (BOOL)canBecomeKeyView
 {
-    [[self nextResponder] rightMouseDown:theEvent];
+    return YES;
 }
+
+- (BOOL)acceptsFirstResponder
+{
+    return YES;
+}
+
+- (BOOL)wantsUpdateLayer
+{
+    return YES;
+}
+
 
 - (void)resetCursorRects
 {
     [super resetCursorRects];
-    // SDL_Mouse *mouse = SDL_GetMouse();
-
-    // if (mouse->cursor_shown && mouse->cur_cursor && !mouse->relative_mode) {
-    //     [self addCursorRect:[self bounds]
-    //                  cursor:mouse->cur_cursor->driverdata];
-    // } else {
-    //     [self addCursorRect:[self bounds]
-    //                  cursor:[NSCursor invisibleCursor]];
-    // }
+    // KFX TODO where to hide cursor
 }
 @end
 
@@ -205,17 +210,7 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
     center = [NSNotificationCenter defaultCenter];
 
-    if ([window->ns.nswindow delegate] != nil) {
-        [center addObserver:self selector:@selector(windowDidExpose:) name:NSWindowDidExposeNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidMove:) name:NSWindowDidMoveNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidMiniaturize:) name:NSWindowDidMiniaturizeNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidDeminiaturize:) name:NSWindowDidDeminiaturizeNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidBecomeKey:) name:NSWindowDidBecomeKeyNotification object:window->ns.nswindow];
-        [center addObserver:self selector:@selector(windowDidResignKey:) name:NSWindowDidResignKeyNotification object:window->ns.nswindow];
-    } else {
-        [window->ns.nswindow setDelegate:self];
-    }
+    [window->ns.nswindow setDelegate:self];
 
     /* Haven't found a delegate / notification that triggers when the window is
      * ordered out (is not visible any more). You can be ordered out without
@@ -274,18 +269,7 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
     center = [NSNotificationCenter defaultCenter];
 
-    if ([window->ns.nswindow delegate] != self) {
-        [center removeObserver:self name:NSWindowDidExposeNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidMoveNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidResizeNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidMiniaturizeNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidDeminiaturizeNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidBecomeKeyNotification object:window->ns.nswindow];
-        [center removeObserver:self name:NSWindowDidResignKeyNotification object:window->ns.nswindow];
-    } else {
-        [window->ns.nswindow setDelegate:nil];
-    }
-
+    [window->ns.nswindow setDelegate:nil];
     [window->ns.nswindow removeObserver:self forKeyPath:@"visible"];
 
     if ([window->ns.nswindow nextResponder] == self) {
@@ -331,19 +315,19 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)windowDidFinishMoving
 {
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
 - (BOOL)windowShouldClose:(id)sender
 {
+    KFX_DBG("Should close");
+    _glfwInputWindowCloseRequest(window);
     return NO;
 }
 
 - (void)windowDidExpose:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
@@ -354,28 +338,42 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 - (void)windowDidMove:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
 - (void)windowDidResize:(NSNotification *)aNotification
 {
-    KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
+
+    const NSRect contentRect = [[window->ns.nswindow contentView] frame];
+    const NSRect fbRect = [[window->ns.nswindow contentView] bounds];
+
+    if (fbRect.size.width != window->ns.fbWidth ||
+        fbRect.size.height != window->ns.fbHeight)
+    {
+        window->ns.fbWidth  = fbRect.size.width;
+        window->ns.fbHeight = fbRect.size.height;
+        _glfwInputFramebufferSize(window, fbRect.size.width, fbRect.size.height);
+    }
+
+    if (contentRect.size.width != window->ns.width ||
+        contentRect.size.height != window->ns.height)
+    {
+        window->ns.width  = contentRect.size.width;
+        window->ns.height = contentRect.size.height;
+        _glfwInputWindowSize(window, contentRect.size.width, contentRect.size.height);
+    }
 }
 
 - (void)windowDidMiniaturize:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
 - (void)windowDidDeminiaturize:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
@@ -394,7 +392,6 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 - (void)windowDidEnterFullScreen:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
@@ -407,7 +404,6 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 - (void)windowDidExitFullScreen:(NSNotification *)aNotification
 {
     KFX_DBG("Trigger update");
-    [[window->ns.nswindow contentView] update];
     [window->context.nsgl.object update];
 }
 
@@ -438,6 +434,10 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
+    _glfwInputMouseClick(window,
+                        GLFW_MOUSE_BUTTON_LEFT,
+                        GLFW_PRESS,
+                        0);
 }
 
 - (void)rightMouseDown:(NSEvent *)theEvent
@@ -450,6 +450,10 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)mouseUp:(NSEvent *)theEvent
 {
+    _glfwInputMouseClick(window,
+                         GLFW_MOUSE_BUTTON_LEFT,
+                         GLFW_RELEASE,
+                         0);
 }
 
 - (void)rightMouseUp:(NSEvent *)theEvent
@@ -462,6 +466,24 @@ static unsigned int GetWindowStyle(GLFWbool fullscreen, GLFWbool borderless, GLF
 
 - (void)mouseMoved:(NSEvent *)theEvent
 {
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    if (window->cursorMode == GLFW_CURSOR_DISABLED)
+    {
+        _glfwInputCursorPos(window,
+                            window->virtualCursorPosX + [theEvent deltaX],
+                            window->virtualCursorPosY + [theEvent deltaY]);
+    }
+    else
+    {
+        const NSRect contentRect = [[window->ns.nswindow contentView] frame];
+        // NOTE: The returned location uses base 0,1 not 0,0
+        const NSPoint pos = [theEvent locationInWindow];
+
+        _glfwInputCursorPos(window, pos.x, contentRect.size.height - pos.y);
+    }
+
+    [pool release];
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent
@@ -868,7 +890,8 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     rect.size.width,
     rect.size.height);
 
-    NSView* contentView = [[GLFWView alloc] initWithFrame:rect];
+    GLFWView* contentView = [[GLFWView alloc] initWithFrame:rect];
+    contentView->window = nswindow;
 
     // if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
     //     if ([contentView respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
@@ -888,18 +911,12 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
     KFX_DBG("orderFront");
     [nswindow orderFront: nil];
     // Show window
-    KFX_DBG("makeKeyAndOrderFront");
     [nswindow makeKeyAndOrderFront:nil];
 
-    KFX_DBG("makeFirstResponder");
     [nswindow makeFirstResponder:contentView];
     //[nswindow setTitle:wndconfig->title];
-    //[nswindow setDelegate:window->ns.delegate];
 
-    KFX_DBG("setDelegate: NSResponder alloc");
     [nswindow setDelegate: [[NSResponder alloc] init]];
-
-    KFX_DBG("setAcceptsMouseMovedEvents");
     [nswindow setAcceptsMouseMovedEvents:YES];
 
     // TODO KFX: Cleanup later?
@@ -953,11 +970,8 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
             return GLFW_FALSE;
     }
 
-
-
-
-
-
+    _glfwGetWindowSizeCocoa(window, &window->ns.width, &window->ns.height);
+    _glfwGetFramebufferSizeCocoa(window, &window->ns.fbWidth, &window->ns.fbHeight);
 
     [contentView release];
     [pool release];
@@ -967,9 +981,18 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
 
 void _glfwDestroyWindowCocoa(_GLFWwindow* window)
 {
-    KFX_DBG("NOT IMPLEMENTED");
-
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+    [window->ns.nswindow orderOut:nil];
+
+    if (window->context.destroy)
+        window->context.destroy(window);
+
+    [window->ns.nswindow close];
+    window->ns.nswindow = nil;
+
+    // HACK: Allow Cocoa to catch up before returning
+    _glfwPollEventsCocoa();
 
     [pool release];
 }
@@ -1002,11 +1025,15 @@ void _glfwSetWindowPosCocoa(_GLFWwindow* window, int x, int y)
 
 void _glfwGetWindowSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
-    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    const NSRect contentRect = [[window->ns.nswindow contentView] frame];
+
     if (width)
-        *width = 800;
+        *width = contentRect.size.width;
     if (height)
-        *height = 600;
+        *height = contentRect.size.height;
+
+    [pool release];
 }
 
 void _glfwSetWindowSizeCocoa(_GLFWwindow* window, int width, int height)
@@ -1028,26 +1055,34 @@ void _glfwSetWindowAspectRatioCocoa(_GLFWwindow* window, int numer, int denom)
 
 void _glfwGetFramebufferSizeCocoa(_GLFWwindow* window, int* width, int* height)
 {
-    KFX_DBG("NOT IMPLEMENTED - returning [800, 600]");
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    const NSRect fbRect = [[window->ns.nswindow contentView] bounds];
+
     if (width)
-        *width = 800;
+        *width = fbRect.size.width;
     if (height)
-        *height = 600;
+        *height = fbRect.size.height;
+
+    [pool release];
 }
 
 void _glfwGetWindowFrameSizeCocoa(_GLFWwindow* window,
                                   int* left, int* top,
                                   int* right, int* bottom)
 {
-    KFX_DBG("NOT IMPLEMENTED - returning [0, 0] [800, 600]");
+    const NSRect contentRect = [[window->ns.nswindow contentView] frame];
+    const NSRect frameRect = [window->ns.nswindow frameRectForContentRect:contentRect];
+
     if (left)
-        *left = 0;
+        *left = contentRect.origin.x - frameRect.origin.x;
     if (top)
-        *top = 0;
+        *top = frameRect.origin.y + frameRect.size.height -
+               contentRect.origin.y - contentRect.size.height;
     if (right)
-        *right = 800;
+        *right = frameRect.origin.x + frameRect.size.width -
+                 contentRect.origin.x - contentRect.size.width;
     if (bottom)
-        *bottom = 600;
+        *bottom = contentRect.origin.y - frameRect.origin.y;
 }
 
 void _glfwGetWindowContentScaleCocoa(_GLFWwindow* window,
@@ -1229,11 +1264,14 @@ void _glfwPostEmptyEventCocoa(void)
 
 void _glfwGetCursorPosCocoa(_GLFWwindow* window, double* xpos, double* ypos)
 {
-    KFX_DBG("NOT IMPLEMENTED - returning [400, 300]");
+    const NSRect contentRect = [[window->ns.nswindow contentView] frame];
+    // NOTE: The returned location uses base 0,1 not 0,0
+    const NSPoint pos = [window->ns.nswindow mouseLocationOutsideOfEventStream];
+
     if (xpos)
-        *xpos = 400;
+        *xpos = pos.x;
     if (ypos)
-        *ypos = 300;
+        *ypos = contentRect.size.height - pos.y;
 }
 
 void _glfwSetCursorPosCocoa(_GLFWwindow* window, double x, double y)

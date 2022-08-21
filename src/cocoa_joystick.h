@@ -38,7 +38,9 @@
 //
 typedef struct _GLFWjoystickNS
 {
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     IOHIDDeviceRef      device;
+#endif //MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     CFMutableArrayRef   axes;
     CFMutableArrayRef   buttons;
     CFMutableArrayRef   hats;

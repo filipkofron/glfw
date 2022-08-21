@@ -90,7 +90,11 @@ static void createMenuBar(void)
 
     for (size_t i = 0;  i < sizeof(nameKeys) / sizeof(nameKeys[0]);  i++)
     {
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
         id name = bundleInfo[nameKeys[i]];
+#else
+        id name = [bundleInfo objectForKey: nameKeys[i]];
+#endif
         if (name &&
             [name isKindOfClass:[NSString class]] &&
             ![name isEqualToString:@""])
@@ -104,9 +108,9 @@ static void createMenuBar(void)
     {
         char** progname = _NSGetProgname();
         if (progname && *progname)
-            appName = @(*progname);
+            appName = [NSString stringWithUTF8String: *progname];
         else
-            appName = @"GLFW Application";
+            appName = [NSString stringWithUTF8String: "GLFW Application"];
     }
 
     NSMenu* bar = [[NSMenu alloc] init];
@@ -308,6 +312,7 @@ static void createKeyTables(void)
 //
 static GLFWbool updateUnicodeData(void)
 {
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     if (_glfw.ns.inputSource)
     {
         CFRelease(_glfw.ns.inputSource);
@@ -332,6 +337,7 @@ static GLFWbool updateUnicodeData(void)
                         "Cocoa: Failed to retrieve keyboard layout Unicode data");
         return GLFW_FALSE;
     }
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
     return GLFW_TRUE;
 }
@@ -350,6 +356,7 @@ static GLFWbool initializeTIS(void)
         return GLFW_FALSE;
     }
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     CFStringRef* kPropertyUnicodeKeyLayoutData =
         CFBundleGetDataPointerForName(_glfw.ns.tis.bundle,
                                       CFSTR("kTISPropertyUnicodeKeyLayoutData"));
@@ -375,6 +382,7 @@ static GLFWbool initializeTIS(void)
 
     _glfw.ns.tis.kPropertyUnicodeKeyLayoutData =
         *kPropertyUnicodeKeyLayoutData;
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
     return updateUnicodeData();
 }
@@ -395,8 +403,13 @@ static GLFWbool initializeTIS(void)
 
 @end // GLFWHelper
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 @interface GLFWApplicationDelegate : NSObject <NSApplicationDelegate>
 @end
+#else // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
+@interface GLFWApplicationDelegate : NSObject
+@end
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
 @implementation GLFWApplicationDelegate
 
@@ -578,8 +591,11 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
 #if NEW_APPLE
 int _glfwInitCocoa(void)
 {
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     @autoreleasepool {
-
+#else
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+#endif
     _glfw.ns.helper = [[GLFWHelper alloc] init];
 
     [NSThread detachNewThreadSelector:@selector(doNothing:)
@@ -596,6 +612,7 @@ int _glfwInitCocoa(void)
         return GLFW_FALSE;
     }
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     [NSApp setDelegate:_glfw.ns.delegate];
     NSEvent* (^block)(NSEvent*) = ^ NSEvent* (NSEvent* event)
     {
@@ -608,11 +625,13 @@ int _glfwInitCocoa(void)
     _glfw.ns.keyUpMonitor =
         [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                               handler:block];
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
     if (_glfw.hints.init.ns.chdir)
         changeToResourcesDirectory();
 
     // Press and Hold prevents some keys from emitting repeated characters
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     NSDictionary* defaults = @{@"ApplePressAndHoldEnabled":@NO};
     [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
 
@@ -621,6 +640,7 @@ int _glfwInitCocoa(void)
            selector:@selector(selectedKeyboardInputSourceChanged:)
                name:NSTextInputContextKeyboardSelectionDidChangeNotification
              object:nil];
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
     createKeyTables();
 
@@ -635,16 +655,25 @@ int _glfwInitCocoa(void)
 
     _glfwPollMonitorsCocoa();
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     if (![[NSRunningApplication currentApplication] isFinishedLaunching])
-        [NSApp run];
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
+    // TODO: KFX probably wrong
+    [NSApp run];
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     // In case we are unbundled, make us a proper UI application
     if (_glfw.hints.init.ns.menubar)
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 
     return GLFW_TRUE;
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     } // autoreleasepool
+#else
+    [pool release];
+#endif
 }
 #else // NEW_APPLE
 int _glfwInitCocoa(void)
@@ -673,7 +702,11 @@ int _glfwInitCocoa(void)
 #if NEW_APPLE
 void _glfwTerminateCocoa(void)
 {
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     @autoreleasepool {
+#else
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+#endif
 
     if (_glfw.ns.inputSource)
     {
@@ -717,7 +750,11 @@ void _glfwTerminateCocoa(void)
     _glfwTerminateEGL();
     _glfwTerminateOSMesa();
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     } // autoreleasepool
+#else
+    [pool release];
+#endif
 }
 #else // NEW_APPLE
 void _glfwTerminateCocoa(void)

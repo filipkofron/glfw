@@ -123,6 +123,7 @@ typedef VkResult (APIENTRY *PFN_vkCreateMetalSurfaceEXT)(VkInstance,const VkMeta
 #endif // NEW_APPLE
 
 #if NEW_APPLE
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 // HIToolbox.framework pointer typedefs
 #define kTISPropertyUnicodeKeyLayoutData _glfw.ns.tis.kPropertyUnicodeKeyLayoutData
 typedef TISInputSourceRef (*PFN_TISCopyCurrentKeyboardLayoutInputSource)(void);
@@ -130,6 +131,7 @@ typedef TISInputSourceRef (*PFN_TISCopyCurrentKeyboardLayoutInputSource)(void);
 typedef void* (*PFN_TISGetInputSourceProperty)(TISInputSourceRef,CFStringRef);
 #define TISGetInputSourceProperty _glfw.ns.tis.GetInputSourceProperty
 typedef UInt8 (*PFN_LMGetKbdType)(void);
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
 #define LMGetKbdType _glfw.ns.tis.GetKbdType
 #endif // NEW_APPLE
 
@@ -181,9 +183,11 @@ typedef struct _GLFWlibraryNS
     CGEventSourceRef    eventSource;
     id                  delegate;
     GLFWbool            cursorHidden;
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     TISInputSourceRef   inputSource;
     IOHIDManagerRef     hidManager;
     id                  unicodeData;
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     id                  helper;
     id                  keyUpMonitor;
     id                  nibObjects;
@@ -200,10 +204,12 @@ typedef struct _GLFWlibraryNS
 
     struct {
         CFBundleRef     bundle;
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
         PFN_TISCopyCurrentKeyboardLayoutInputSource CopyCurrentKeyboardLayoutInputSource;
         PFN_TISGetInputSourceProperty GetInputSourceProperty;
         PFN_LMGetKbdType GetKbdType;
         CFStringRef     kPropertyUnicodeKeyLayoutData;
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     } tis;
 } _GLFWlibraryNS;
 
@@ -213,7 +219,9 @@ typedef struct _GLFWlibraryNS
 typedef struct _GLFWmonitorNS
 {
     CGDirectDisplayID   displayID;
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     CGDisplayModeRef    previousMode;
+#endif // MAC_OS_X_VERSION_MAX_ALLOWED > 1050
     uint32_t            unitNumber;
     id                  screen;
     double              fallbackRefreshRate;
@@ -234,6 +242,8 @@ typedef struct _GLFWcursorNS
 typedef struct _GLFWwindowNS
 {
     id              nswindow;
+    int             width, height;
+    int             fbWidth, fbHeight;
 } _GLFWwindowNS;
 #endif
 
